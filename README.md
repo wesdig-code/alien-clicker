@@ -1,19 +1,14 @@
-# Alien Clicker - Jeu Refactorisé
+# Alien Clicker
 
-Un jeu clicker sur le thème des aliens, développé avec Phaser.js et refactorisé en modules.
+Un jeu de type 'idle-game' sur le thème des aliens, développé avec Phaser.js.
 
-## 📁 Architecture du Projet
-
-Le projet a été refactorisé en modules logiques pour une meilleure maintenabilité :
-
-### 📋 Structure des fichiers
+## 📋 Structure du projet
 
 ```
 alien-clicker/
 ├── index.html              # Point d'entrée HTML
 ├── style.css               # Styles CSS
 ├── main.js                 # Point d'entrée principal
-├── main-old.js            # Ancien fichier monolithique (sauvegarde)
 └── js/                    # Modules JavaScript
     ├── data.js            # Configuration et données du jeu
     ├── utils.js           # Fonctions utilitaires
@@ -80,28 +75,6 @@ alien-clicker/
 - Initialisation de l'instance Phaser
 - Point de démarrage du jeu
 
-## 🚀 Avantages de la Refactorisation
-
-### ✅ **Lisibilité Améliorée**
-- Code séparé par responsabilité
-- Fonctions plus courtes et focalisées
-- Structure logique claire
-
-### ✅ **Maintenabilité**
-- Modifications isolées par module
-- Debugging plus facile
-- Tests unitaires possibles
-
-### ✅ **Réutilisabilité**
-- Modules indépendants
-- Fonctions utilitaires réutilisables
-- Séparation des préoccupations
-
-### ✅ **Évolutivité**
-- Ajout de nouvelles fonctionnalités simplifié
-- Structure modulaire extensible
-- Code organisé pour la croissance
-
 ## 🔄 Ordre de Chargement
 
 Les scripts sont chargés dans l'ordre suivant dans `index.html` :
@@ -133,13 +106,3 @@ Les scripts sont chargés dans l'ordre suivant dans `index.html` :
 - **📱 Interface Responsive** - Design adaptatif
 - **🎨 Effets Visuels** - Animations et feedback
 
-## 📝 Historique
-
-- **Avant** : 998 lignes dans un seul fichier `main.js`
-- **Après** : Code réparti en 9 modules logiques
-- **Bénéfice** : Structure claire et maintenable
-
----
-
-🚀 **Le jeu fonctionne exactement comme avant, mais avec une architecture bien plus propre !** 👽
-- Sons et animations
