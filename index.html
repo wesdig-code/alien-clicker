@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Alien Clicker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Écran d'accueil -->
+    <div id="welcome-screen" class="welcome-screen">
+        <div class="welcome-container">
+            <h1 class="welcome-title">👽 ALIEN CLICKER 🛸</h1>
+            <p class="welcome-subtitle">Cliquez, collectez et conquérez la galaxie !</p>
+            
+            <div class="welcome-buttons">
+                <button class="welcome-btn new-game-btn" onclick="startNewGame()">
+                    🚀 Nouvelle Partie
+                </button>
+                <button class="welcome-btn load-game-btn" onclick="showLoadGameDialog()">
+                    💾 Charger une Partie
+                </button>
+            </div>
+            
+            <!-- Dialogue de chargement de fichier -->
+            <div id="load-dialog" class="load-dialog hidden">
+                <h3>Charger une Sauvegarde</h3>
+                <input type="file" id="save-file-input" accept=".json" />
+                <div class="load-dialog-buttons">
+                    <button onclick="loadGameFromFile()" class="load-confirm-btn">Charger</button>
+                    <button onclick="hideLoadGameDialog()" class="load-cancel-btn">Annuler</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interface de jeu (cachée au début) -->
+    <div id="shop" class="game-interface hidden">
+        <div class="shop-tabs">
+            <button class="tab-button active" onclick="switchTab('farms')">🛸 Fermes</button>
+            <button class="tab-button" onclick="switchTab('tools')">🔧 Outils</button>
+            <button class="tab-button" onclick="switchTab('wormhole')">🌌 Wormhole</button>
+            <button class="tab-button" onclick="switchTab('save')">💾 Sauvegarde</button>
+        </div>
+        
+        <div id="farms-tab" class="tab-content active">
+            <h3 class="tab-header">Fermes Aliens</h3>
+            <div id="farm-container"></div>
+        </div>
+        
+        <div id="tools-tab" class="tab-content">
+            <h3 class="tab-header">Outils de Clic</h3>
+            <div id="tool-container"></div>
+        </div>
+        
+        <div id="wormhole-tab" class="tab-content">
+            <h3 class="tab-header">🌌 Wormhole - Prestige</h3>
+            
+            <div class="wormhole-info">
+                <div class="stardust-display">
+                    <span class="stardust-label">✨ Stardust disponible:</span>
+                    <span class="stardust-value" id="stardust-amount">0</span>
+                </div>
+                
+                <div class="prestige-section">
+                    <h4>🚀 Voyage Interdimensionnel</h4>
+                    <p class="prestige-description">
+                        Traversez un wormhole pour recommencer votre aventure avec des bonus permanents !
+                        Votre score actuel sera converti en <strong>Stardust</strong>.
+                    </p>
+                    
+                    <div class="prestige-preview">
+                        <span>Score actuel: <span id="current-score-preview">0</span></span>
+                        <span>Stardust à gagner: <span id="stardust-gain-preview">0</span></span>
+                    </div>
+                    
+                    <button id="prestige-button" class="prestige-btn" onclick="performPrestige()">
+                        🌌 Entrer dans le Wormhole
+                    </button>
+                </div>
+            </div>
+            
+            <div class="prestige-upgrades">
+                <h4>⭐ Améliorations Permanentes</h4>
+                <div id="prestige-upgrades-container">
+                    <!-- Les améliorations seront générées par JavaScript -->
+                </div>
+            </div>
+        </div>
+        
+        <div id="save-tab" class="tab-content">
+            <h3 class="tab-header">Gestion des Parties</h3>
+            
+            <div class="game-stats">
+                <div class="stat-line">
+                    <span class="stat-label">Score actuel:</span>
+                    <span class="stat-value" id="current-score">0</span>
+                </div>
+                <div class="stat-line">
+                    <span class="stat-label">🏆 Score total gagné:</span>
+                    <span class="stat-value" id="total-score-earned">0</span>
+                </div>
+                <div class="stat-line">
+                    <span class="stat-label">💰 Score total dépensé:</span>
+                    <span class="stat-value" id="total-score-spent">0</span>
+                </div>
+                <div class="stat-line">
+                    <span class="stat-label">Points/seconde:</span>
+                    <span class="stat-value" id="current-ps">0</span>
+                </div>
+                <div class="stat-line">
+                    <span class="stat-label">Points/clic:</span>
+                    <span class="stat-value" id="current-pc">1</span>
+                </div>
+                <div class="stat-line">
+                    <span class="stat-label">Fermes totales:</span>
+                    <span class="stat-value" id="total-farms">0</span>
+                </div>
+                <div class="stat-line">
+                    <span class="stat-label">Outils totaux:</span>
+                    <span class="stat-value" id="total-tools">0</span>
+                </div>
+            </div>
+            
+            <div class="save-section">
+                <h4>🌌 Effets Visuels</h4>
+                <button class="save-button" id="toggle-background" onclick="toggleBackgroundEmojis()">
+                    <span id="background-status">🌟 Désactiver les émojis</span>
+                </button>
+                <div class="save-info">
+                    Active/désactive les émojis flottants en arrière-plan
+                </div>
+            </div>
+            
+            <div class="save-section">
+                <h4>💾 Sauvegarder la partie</h4>
+                <button class="save-button" onclick="saveGame()">Télécharger la sauvegarde</button>
+                <div class="save-info">
+                    La sauvegarde sera téléchargée en fichier JSON<br>
+                    Nom: alien-clicker-save.json
+                </div>
+            </div>
+            
+            <div class="save-section">
+                <h4>📁 Charger une partie</h4>
+                <input type="file" class="file-input" id="load-file" accept=".json" onchange="loadGame(event)">
+                <div class="save-info">
+                    Sélectionnez un fichier de sauvegarde JSON<br>
+                    ⚠️ Attention: Cela remplacera votre partie actuelle
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Zone de jeu Phaser (toujours visible) -->
+    <div id="game"></div>
+    
+    <!-- Scripts dans l'ordre de dépendance -->
+    <script src="js/data.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/farms.js"></script>
+    <script src="js/tools.js"></script>
+    <script src="js/upgrades.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/save.js"></script>
+    <script src="js/background.js"></script>
+    <script src="js/wormhole.js"></script>
+    <script src="js/welcome.js"></script>
+    <script src="js/game.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
