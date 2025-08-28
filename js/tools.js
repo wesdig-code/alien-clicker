@@ -50,8 +50,8 @@ function initializeTools() {
                 <span class="tool-cost">Prochain: ${getToolCost(tool)}</span>
                 <span class="tool-level">Niveau: ${tool.level}</span>
             </div>
-            <div class="tool-power">Puissance: +${(tool.basePower * tool.level * tool.multiplier).toLocaleString()}/clic</div>
-            <div class="tool-multiplier">Multiplicateur: x${tool.multiplier}</div>
+            <div class="tool-power">Puissance: +${Math.floor(tool.basePower * tool.level * tool.multiplier * 100) / 100}/clic</div>
+            <div class="tool-multiplier">Multiplicateur: x${Math.floor(tool.multiplier * 100) / 100}</div>
         `;
         
         // Ajouter les boutons d'amélioration
@@ -154,8 +154,8 @@ function updateToolsDisplay() {
         
         if (costSpan) costSpan.textContent = `Prochain: ${formatNumber(cost1)}`;
         if (levelSpan) levelSpan.textContent = `Niveau: ${tool.level}`;
-        if (powerDiv) powerDiv.textContent = `Puissance: +${(tool.basePower * tool.level * tool.multiplier).toLocaleString()}/clic`;
-        if (multiplierDiv) multiplierDiv.textContent = `Multiplicateur: x${tool.multiplier}`;
+        if (powerDiv) powerDiv.textContent = `Puissance: +${Math.floor(tool.basePower * tool.level * tool.multiplier * 100) / 100}/clic`;
+        if (multiplierDiv) multiplierDiv.textContent = `Multiplicateur: x${Math.floor(tool.multiplier * 100) / 100}`;
         
         // Récupérer les boutons
         const buttons = toolDiv.querySelectorAll('.buy-button');

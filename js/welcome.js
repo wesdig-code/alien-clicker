@@ -194,6 +194,11 @@ function initializeGame() {
         if (typeof initializeTools === 'function') {
             initializeTools();
         }
+        
+        // Initialiser le système de drops
+        if (typeof initializeDropSystem === 'function') {
+            initializeDropSystem();
+        }
     }, 150);
 }
 

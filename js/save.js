@@ -2,7 +2,7 @@
 
 function saveGame() {
     const gameData = {
-        version: "1.1",
+        version: "1.3",
         timestamp: new Date().toISOString(),
         score: score,
         totalScoreEarned: window.totalScoreEarned || 0,
@@ -10,6 +10,8 @@ function saveGame() {
         scorePerSecond: scorePerSecond,
         stardust: window.stardust || 0,
         prestigeUpgrades: window.prestigeUpgrades || [],
+        collectedItems: window.collectedItems || [],
+        itemLevels: window.itemLevels || {},
         farms: farms.map(farm => ({
             id: farm.id,
             count: farm.count,
@@ -66,6 +68,17 @@ function loadGame(event) {
             clickPower = gameData.clickPower || 1;
             scorePerSecond = gameData.scorePerSecond || 0;
             
+            // Charger les items collectés
+            if (gameData.collectedItems && window.collectedItems !== undefined) {
+                window.collectedItems.length = 0; // Vider le tableau
+                window.collectedItems.push(...gameData.collectedItems);
+            }
+            
+            // Charger les niveaux des items
+            if (gameData.itemLevels && window.itemLevels !== undefined) {
+                Object.assign(window.itemLevels, gameData.itemLevels);
+            }
+            
             // Charger les données de prestige
             window.stardust = gameData.stardust || 0;
             
@@ -115,6 +128,11 @@ function loadGame(event) {
             updateScorePerSecond();
             updateClickPower();
             updateDisplay();
+            
+            // Mettre à jour l'affichage de la collection
+            if (typeof updateCollectionDisplay === 'function') {
+                updateCollectionDisplay();
+            }
             
             // Effet visuel de confirmation
             showLoadSuccess();

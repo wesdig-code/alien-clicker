@@ -66,8 +66,8 @@ function updateSaveStats() {
         totalScoreSpent.textContent = Math.floor(spent).toLocaleString();
     }
     
-    if (currentPs) currentPs.textContent = scorePerSecond.toLocaleString();
-    if (currentPc) currentPc.textContent = clickPower.toLocaleString();
+    if (currentPs) currentPs.textContent = formatNumber(scorePerSecond);
+    if (currentPc) currentPc.textContent = formatNumber(clickPower);
     
     if (totalFarms) {
         const farmCount = farms.reduce((sum, farm) => sum + farm.count, 0);

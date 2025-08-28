@@ -156,12 +156,35 @@
     <!-- Zone de jeu Phaser (toujours visible) -->
     <div id="game"></div>
     
+    <!-- Zone d'affichage des effets actifs -->
+    <div id="active-effects" class="active-effects-container hidden">
+        <div class="effects-title">Effets Actifs</div>
+        <div id="effects-list" class="effects-list">
+            <!-- Les effets seront ajoutés dynamiquement ici -->
+        </div>
+    </div>
+    
+    <!-- Panel de collection d'items permanents -->
+    <div id="collection-panel" class="collection-panel hidden">
+        <div class="collection-header">
+            <div class="collection-title">🏆 Collection</div>
+            <div class="collection-counter" id="collection-counter">0/9</div>
+            <button class="collection-toggle" onclick="toggleCollectionPanel()">📦</button>
+        </div>
+        <div class="collection-content">
+            <div id="collection-grid" class="collection-grid">
+                <!-- Les items de collection seront ajoutés ici -->
+            </div>
+        </div>
+    </div>
+    
     <!-- Scripts dans l'ordre de dépendance -->
     <script src="js/data.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/farms.js"></script>
     <script src="js/tools.js"></script>
     <script src="js/upgrades.js"></script>
+    <script src="js/drops.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/save.js"></script>
     <script src="js/background.js"></script>

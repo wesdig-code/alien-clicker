@@ -3,13 +3,21 @@
 // Fonction pour formater les nombres de manière compacte
 function formatNumber(num) {
     if (num >= 1000000000) {
-        return (num / 1000000000).toFixed(1) + 'B';
+        return (num / 1000000000).toFixed(2) + 'B';
     } else if (num >= 1000000) {
-        return (num / 1000000).toFixed(1) + 'M';
+        return (num / 1000000).toFixed(2) + 'M';
     } else if (num >= 1000) {
-        return (num / 1000).toFixed(1) + 'K';
+        return (num / 1000).toFixed(2) + 'K';
     }
-    return num.toString();
+    
+    // Pour les nombres inférieurs à 1000, limiter à 2 décimales si nécessaire
+    if (num % 1 === 0) {
+        // Nombre entier, pas de décimales
+        return num.toString();
+    } else {
+        // Nombre décimal, limiter à 2 décimales
+        return num.toFixed(2);
+    }
 }
 
 // Fonction pour calculer le coût en gros (bulk buying)

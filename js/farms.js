@@ -51,7 +51,7 @@ function initializeFarms() {
                 <span class="farm-count">Niveau: ${farm.count}</span>
             </div>
             <div class="farm-production">Production: ${getCurrentProduction(farm).toLocaleString()}/sec</div>
-            <div class="farm-multiplier">Multiplicateur: x${farm.multiplier}</div>
+            <div class="farm-multiplier">Multiplicateur: x${Math.floor(farm.multiplier * 100) / 100}</div>
         `;
         
         // Ajouter les boutons d'amélioration
@@ -90,7 +90,7 @@ function getCurrentCost(farm) {
 }
 
 function getCurrentProduction(farm) {
-    return farm.baseProduction * farm.count * farm.multiplier;
+    return Math.floor(farm.baseProduction * farm.count * farm.multiplier * 100) / 100; // Arrondir à 2 décimales
 }
 
 function buyFarm(farm, quantity = 1) {
@@ -156,7 +156,7 @@ function updateFarmsDisplay() {
         if (costSpan) costSpan.textContent = `Prochain: ${formatNumber(cost1)}`;
         if (countSpan) countSpan.textContent = `Niveau: ${farm.count}`;
         if (productionDiv) productionDiv.textContent = `Production: ${getCurrentProduction(farm).toLocaleString()}/sec`;
-        if (multiplierDiv) multiplierDiv.textContent = `Multiplicateur: x${farm.multiplier}`;
+        if (multiplierDiv) multiplierDiv.textContent = `Multiplicateur: x${Math.floor(farm.multiplier * 100) / 100}`;
         
         // Récupérer les boutons
         const buttons = farmDiv.querySelectorAll('.buy-button');

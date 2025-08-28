@@ -64,8 +64,19 @@ function createAlienClickArea() {
     alienArea.innerHTML = '👽';
     
     alienArea.addEventListener('click', (event) => {
-        score += clickPower; // Utiliser la puissance de clic
-        window.totalScoreEarned += clickPower; // Tracker le score total
+        // Calculer les points avec le multiplicateur des drops
+        const basePoints = clickPower;
+        const multiplier = typeof getCurrentScoreMultiplier === 'function' ? getCurrentScoreMultiplier() : 1;
+        const finalPoints = Math.floor(basePoints * multiplier);
+        
+        score += finalPoints;
+        window.totalScoreEarned += finalPoints;
+        
+        // Gérer les drops d'items
+        if (typeof handleClickDrop === 'function') {
+            handleClickDrop(event.clientX, event.clientY);
+        }
+        
         updateDisplay();
         createClickEffect(event.clientX, event.clientY);
         
