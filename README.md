@@ -123,6 +123,14 @@ npm run dev:open
 
 Cette commande ouvre automatiquement le navigateur.
 
+Pour tester sur mobile (même réseau local) :
+
+```bash
+npm run dev:host
+```
+
+Utilisez ensuite l'URL `External` affichée par BrowserSync sur votre téléphone.
+
 ## 🎮 Fonctionnalités
 
 - **🛸 Fermes Aliens** - Production automatique de points
