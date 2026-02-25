@@ -811,6 +811,9 @@ function initializeDropSystem() {
     
     // Mettre à jour l'affichage des effets plus fréquemment pour les timers
     setInterval(updateActiveEffectsDisplay, 100);
+
+    // Rafraîchir l'affichage de la collection au démarrage/chargement
+    updateCollectionDisplay();
     
     console.log('🎁 Système de drops initialisé');
 }
