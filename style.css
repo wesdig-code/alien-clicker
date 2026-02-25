@@ -587,7 +587,9 @@ body {
     position: absolute;
     font-size: 24px;
     font-weight: bold;
-    color: #00ff88;
+    color: #fff36a;
+    -webkit-text-stroke: 1px #1a1a2e;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9), 0 0 12px rgba(255, 243, 106, 0.6);
     pointer-events: none;
     z-index: 1000;
     animation: floatUp 1s ease-out forwards;
