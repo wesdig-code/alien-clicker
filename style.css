@@ -28,10 +28,19 @@ body {
 
 #game {
     margin-top: 20px;
+    background: #2a2a3e;
+    border: 2px solid #4a4a6e;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     order: 2;
     flex-shrink: 0; /* Ne pas rétrécir le jeu */
     height: calc(100vh - 40px); /* Hauteur fixe */
     overflow: hidden; /* Pas de scroll sur le jeu */
+}
+
+#game canvas {
+    display: block;
+    border-radius: 8px;
 }
 
 .shop-tabs {
