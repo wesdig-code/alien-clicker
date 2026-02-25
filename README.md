@@ -96,6 +96,33 @@ Les scripts sont chargés dans l'ordre suivant dans `index.html` :
 - **JavaScript ES6+** - Logique du jeu
 - **JSON** - Système de sauvegarde
 
+## 💻 Développement local (live reload)
+
+Prérequis : **Node.js 18+** (ou version LTS récente)
+
+1. Installer les dépendances :
+
+```bash
+npm install
+```
+
+2. Lancer le serveur de dev avec rechargement auto :
+
+```bash
+npm run dev
+```
+
+Le site est servi sur `http://localhost:3000`.
+Les changements sur `index.html`, `style.css`, `main.js` et `js/**/*.js` déclenchent un rechargement automatique.
+
+Option :
+
+```bash
+npm run dev:open
+```
+
+Cette commande ouvre automatiquement le navigateur.
+
 ## 🎮 Fonctionnalités
 
 - **🛸 Fermes Aliens** - Production automatique de points
