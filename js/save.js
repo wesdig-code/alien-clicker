@@ -1,5 +1,104 @@
 // Système de sauvegarde et chargement
 
+function applyLoadedGameData(gameData, options = {}) {
+    const refreshUI = options.refreshUI !== false;
+
+    // Vérifier la validité minimale des données
+    if (!gameData || (!gameData.score && gameData.score !== 0)) {
+        throw new Error('Fichier de sauvegarde invalide');
+    }
+
+    // Charger les données de base
+    score = gameData.score || 0;
+    window.totalScoreEarned = gameData.totalScoreEarned || 0;
+    clickPower = gameData.clickPower || 1;
+    scorePerSecond = gameData.scorePerSecond || 0;
+
+    // Charger les données de prestige
+    window.stardust = gameData.stardust || 0;
+
+    // Restaurer les upgrades de prestige
+    if (Array.isArray(gameData.prestigeUpgrades) && Array.isArray(window.prestigeUpgrades)) {
+        gameData.prestigeUpgrades.forEach(savedUpgrade => {
+            const upgrade = window.prestigeUpgrades.find(u => u.id === savedUpgrade.id);
+            if (upgrade) {
+                upgrade.level = savedUpgrade.level || 0;
+            }
+        });
+    }
+
+    // Charger les items collectés (collection)
+    if (Array.isArray(window.collectedItems)) {
+        window.collectedItems.length = 0;
+        if (Array.isArray(gameData.collectedItems)) {
+            window.collectedItems.push(...gameData.collectedItems);
+        }
+    }
+
+    // Charger les niveaux des items (collection)
+    if (window.itemLevels && typeof window.itemLevels === 'object') {
+        Object.keys(window.itemLevels).forEach(key => {
+            delete window.itemLevels[key];
+        });
+
+        if (gameData.itemLevels && typeof gameData.itemLevels === 'object') {
+            Object.assign(window.itemLevels, gameData.itemLevels);
+        }
+    }
+
+    // Restaurer les fermes
+    if (Array.isArray(gameData.farms)) {
+        gameData.farms.forEach(savedFarm => {
+            const farm = farms.find(f => f.id === savedFarm.id);
+            if (farm) {
+                farm.count = savedFarm.count || 0;
+                farm.multiplier = savedFarm.multiplier || 1;
+                farm.upgrades = savedFarm.upgrades || {
+                    level10: false,
+                    level25: false,
+                    level50: false
+                };
+            }
+        });
+    }
+
+    // Restaurer les outils
+    if (Array.isArray(gameData.tools)) {
+        gameData.tools.forEach(savedTool => {
+            const tool = tools.find(t => t.id === savedTool.id);
+            if (tool) {
+                tool.level = savedTool.level || 0;
+                tool.multiplier = savedTool.multiplier || 1;
+                tool.upgrades = savedTool.upgrades || {
+                    level10: false,
+                    level25: false,
+                    level50: false
+                };
+            }
+        });
+    }
+
+    // Recalculer les valeurs dérivées
+    if (typeof updateScorePerSecond === 'function') {
+        updateScorePerSecond();
+    }
+    if (typeof updateClickPower === 'function') {
+        updateClickPower();
+    }
+
+    if (refreshUI) {
+        if (typeof updateDisplay === 'function') {
+            updateDisplay();
+        }
+        if (typeof updateCollectionDisplay === 'function') {
+            updateCollectionDisplay();
+        }
+        if (typeof updatePrestigeDisplay === 'function') {
+            updatePrestigeDisplay();
+        }
+    }
+}
+
 function saveGame() {
     const gameData = {
         version: "1.3",
@@ -56,83 +155,7 @@ function loadGame(event) {
     reader.onload = function(e) {
         try {
             const gameData = JSON.parse(e.target.result);
-            
-            // Vérifier la validité des données
-            if (!gameData.score && gameData.score !== 0) {
-                throw new Error('Fichier de sauvegarde invalide');
-            }
-            
-            // Charger les données
-            score = gameData.score || 0;
-            window.totalScoreEarned = gameData.totalScoreEarned || 0;
-            clickPower = gameData.clickPower || 1;
-            scorePerSecond = gameData.scorePerSecond || 0;
-            
-            // Charger les items collectés
-            if (gameData.collectedItems && window.collectedItems !== undefined) {
-                window.collectedItems.length = 0; // Vider le tableau
-                window.collectedItems.push(...gameData.collectedItems);
-            }
-            
-            // Charger les niveaux des items
-            if (gameData.itemLevels && window.itemLevels !== undefined) {
-                Object.assign(window.itemLevels, gameData.itemLevels);
-            }
-            
-            // Charger les données de prestige
-            window.stardust = gameData.stardust || 0;
-            
-            // Restaurer les upgrades de prestige
-            if (gameData.prestigeUpgrades && window.prestigeUpgrades) {
-                gameData.prestigeUpgrades.forEach(savedUpgrade => {
-                    const upgrade = window.prestigeUpgrades.find(u => u.id === savedUpgrade.id);
-                    if (upgrade) {
-                        upgrade.level = savedUpgrade.level || 0;
-                    }
-                });
-            }
-            
-            // Restaurer les fermes
-            if (gameData.farms) {
-                gameData.farms.forEach(savedFarm => {
-                    const farm = farms.find(f => f.id === savedFarm.id);
-                    if (farm) {
-                        farm.count = savedFarm.count || 0;
-                        farm.multiplier = savedFarm.multiplier || 1;
-                        farm.upgrades = savedFarm.upgrades || {
-                            level10: false,
-                            level25: false,
-                            level50: false
-                        };
-                    }
-                });
-            }
-            
-            // Restaurer les outils
-            if (gameData.tools) {
-                gameData.tools.forEach(savedTool => {
-                    const tool = tools.find(t => t.id === savedTool.id);
-                    if (tool) {
-                        tool.level = savedTool.level || 0;
-                        tool.multiplier = savedTool.multiplier || 1;
-                        tool.upgrades = savedTool.upgrades || {
-                            level10: false,
-                            level25: false,
-                            level50: false
-                        };
-                    }
-                });
-            }
-            
-            // Recalculer les valeurs dérivées
-            updateScorePerSecond();
-            updateClickPower();
-            updateDisplay();
-            
-            // Mettre à jour l'affichage de la collection
-            if (typeof updateCollectionDisplay === 'function') {
-                updateCollectionDisplay();
-            }
+            applyLoadedGameData(gameData, { refreshUI: true });
             
             // Effet visuel de confirmation
             showLoadSuccess();
@@ -204,3 +227,5 @@ function showLoadError() {
         }
     }, 3000);
 }
+
+window.applyLoadedGameData = applyLoadedGameData;

@@ -44,56 +44,10 @@ function loadGameFromFile() {
     reader.onload = function(e) {
         try {
             const gameData = JSON.parse(e.target.result);
-            
-            // Valider les données de sauvegarde basiques
-            if (!gameData.score && gameData.score !== 0) {
-                throw new Error('Fichier de sauvegarde invalide - pas de score');
-            }
-            
-            // Utiliser la même logique que save.js
-            // Charger les données de base
-            window.score = gameData.score || 0;
-            window.clickPower = gameData.clickPower || 1;
-            window.scorePerSecond = gameData.scorePerSecond || 0;
-            
-            // Restaurer les fermes
-            if (gameData.farms) {
-                gameData.farms.forEach(savedFarm => {
-                    const farm = farms.find(f => f.id === savedFarm.id);
-                    if (farm) {
-                        farm.count = savedFarm.count || 0;
-                        farm.multiplier = savedFarm.multiplier || 1;
-                        farm.upgrades = savedFarm.upgrades || {
-                            level10: false,
-                            level25: false,
-                            level50: false
-                        };
-                    }
-                });
-            }
-            
-            // Restaurer les outils
-            if (gameData.tools) {
-                gameData.tools.forEach(savedTool => {
-                    const tool = tools.find(t => t.id === savedTool.id);
-                    if (tool) {
-                        tool.level = savedTool.level || 0;
-                        tool.multiplier = savedTool.multiplier || 1;
-                        tool.upgrades = savedTool.upgrades || {
-                            level10: false,
-                            level25: false,
-                            level50: false
-                        };
-                    }
-                });
-            }
-            
-            // Recalculer les valeurs dérivées (mais pas encore l'affichage)
-            if (typeof updateScorePerSecond === 'function') {
-                updateScorePerSecond();
-            }
-            if (typeof updateClickPower === 'function') {
-                updateClickPower();
+            if (typeof applyLoadedGameData === 'function') {
+                applyLoadedGameData(gameData, { refreshUI: false });
+            } else {
+                throw new Error('Système de chargement indisponible');
             }
             
             // Cacher l'écran d'accueil et afficher l'interface de jeu
@@ -139,6 +93,14 @@ function resetGameData() {
                 tool.upgrades = { level10: false, level25: false, level50: false };
             }
         });
+    }
+
+    // Réinitialiser la collection permanente
+    if (Array.isArray(window.collectedItems)) {
+        window.collectedItems.length = 0;
+    }
+    if (window.itemLevels && typeof window.itemLevels === 'object') {
+        Object.keys(window.itemLevels).forEach(key => delete window.itemLevels[key]);
     }
     
     // Vider le localStorage
@@ -219,50 +181,10 @@ document.addEventListener('DOMContentLoaded', function() {
         continueBtn.onclick = function() {
             try {
                 const gameData = JSON.parse(autoSave);
-                
-                // Charger les données (même logique que loadGameFromFile)
-                window.score = gameData.score || 0;
-                window.clickPower = gameData.clickPower || 1;
-                window.scorePerSecond = gameData.scorePerSecond || 0;
-                
-                // Restaurer les fermes
-                if (gameData.farms) {
-                    gameData.farms.forEach(savedFarm => {
-                        const farm = farms.find(f => f.id === savedFarm.id);
-                        if (farm) {
-                            farm.count = savedFarm.count || 0;
-                            farm.multiplier = savedFarm.multiplier || 1;
-                            farm.upgrades = savedFarm.upgrades || {
-                                level10: false,
-                                level25: false,
-                                level50: false
-                            };
-                        }
-                    });
-                }
-                
-                // Restaurer les outils
-                if (gameData.tools) {
-                    gameData.tools.forEach(savedTool => {
-                        const tool = tools.find(t => t.id === savedTool.id);
-                        if (tool) {
-                            tool.level = savedTool.level || 0;
-                            tool.multiplier = savedTool.multiplier || 1;
-                            tool.upgrades = savedTool.upgrades || {
-                                level10: false,
-                                level25: false,
-                                level50: false
-                            };
-                        }
-                    });
-                }
-                
-                // Recalculer les valeurs dérivées (mais pas encore l'affichage)
-                if (typeof updateScorePerSecond === 'function') {
-                    updateScorePerSecond();
-                }
-                if (typeof updateClickPower === 'function') {
-                    updateClickPower();
+                if (typeof applyLoadedGameData === 'function') {
+                    applyLoadedGameData(gameData, { refreshUI: false });
+                } else {
+                    throw new Error('Système de chargement indisponible');
                 }
                 
                 hideWelcomeScreen();
