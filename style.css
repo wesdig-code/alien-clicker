@@ -1372,7 +1372,7 @@ body.welcome-mode #game {
     background: rgba(42, 42, 62, 0.95);
     border: 2px solid #4a4a6e;
     border-radius: 10px;
-    width: 320px;
+    width: 460px;
     z-index: 999;
     backdrop-filter: blur(10px);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
@@ -1388,7 +1388,7 @@ body.welcome-mode #game {
 }
 
 .collection-panel.minimized {
-    width: 150px;
+    width: 210px;
 }
 
 .collection-header {
