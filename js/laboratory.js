@@ -58,8 +58,17 @@ const laboratoryResearchTree = [
 ];
 
 window.unlockedResearch = window.unlockedResearch || [];
+window.activeResearch = window.activeResearch || null;
+
+const LAB_RESEARCH_DURATION_MS = 10000;
+let laboratoryIntervalId = null;
 
 function initializeLaboratory() {
+    if (!laboratoryIntervalId) {
+        laboratoryIntervalId = setInterval(updateLaboratoryState, 100);
+    }
+
+    updateLaboratoryState();
     renderLaboratoryTree();
 }
 
@@ -85,11 +94,31 @@ function buyResearch(researchId) {
     if (!research) return;
 
     if (isResearchUnlocked(research.id)) return;
+    if (window.activeResearch) return;
     if (!arePrerequisitesMet(research)) return;
     if (score < research.cost) return;
 
     score -= research.cost;
-    window.unlockedResearch.push(research.id);
+    const now = Date.now();
+    window.activeResearch = {
+        id: research.id,
+        startAt: now,
+        endAt: now + LAB_RESEARCH_DURATION_MS
+    };
+
+    if (typeof updateDisplay === 'function') {
+        updateDisplay();
+    }
+
+    renderLaboratoryTree();
+}
+
+function completeResearch(researchId) {
+    if (!isResearchUnlocked(researchId)) {
+        window.unlockedResearch.push(researchId);
+    }
+
+    window.activeResearch = null;
 
     if (typeof updateScorePerSecond === 'function') {
         updateScorePerSecond();
@@ -102,8 +131,20 @@ function buyResearch(researchId) {
     if (typeof updateDisplay === 'function') {
         updateDisplay();
     }
+}
 
-    renderLaboratoryTree();
+function updateLaboratoryState() {
+    if (!window.activeResearch) return;
+
+    const activeNode = laboratoryResearchTree.find(node => node.id === window.activeResearch.id);
+    if (!activeNode || isResearchUnlocked(window.activeResearch.id)) {
+        window.activeResearch = null;
+        return;
+    }
+
+    if (Date.now() >= window.activeResearch.endAt) {
+        completeResearch(window.activeResearch.id);
+    }
 }
 
 function getResearchClickMultiplier() {
@@ -168,8 +209,20 @@ function renderLaboratoryTree() {
         const unlocked = isResearchUnlocked(research.id);
         const prerequisitesMet = arePrerequisitesMet(research);
         const affordable = score >= research.cost;
+        const isResearching = window.activeResearch && window.activeResearch.id === research.id;
 
-        if (unlocked) {
+        let progressPercent = 0;
+        let remainingMs = 0;
+
+        if (isResearching) {
+            const elapsed = Date.now() - window.activeResearch.startAt;
+            progressPercent = Math.min(100, Math.max(0, (elapsed / LAB_RESEARCH_DURATION_MS) * 100));
+            remainingMs = Math.max(0, window.activeResearch.endAt - Date.now());
+        }
+
+        if (isResearching) {
+            node.classList.add('researching');
+        } else if (unlocked) {
             node.classList.add('unlocked');
         } else if (prerequisitesMet && affordable) {
             node.classList.add('available');
@@ -182,10 +235,21 @@ function renderLaboratoryTree() {
         node.innerHTML = `
             <div class="research-name">${research.name}</div>
             <div class="research-desc">${research.description}</div>
-            <div class="research-cost">${unlocked ? '✅ Recherché' : `Coût: ${formatNumber(research.cost)}`}</div>
+            <div class="research-cost">${
+                isResearching
+                    ? `⏳ Recherche: ${(remainingMs / 1000).toFixed(1)}s`
+                    : unlocked
+                        ? '✅ Recherché'
+                        : `Coût: ${formatNumber(research.cost)}`
+            }</div>
+            ${isResearching ? `
+                <div class="research-progress">
+                    <div class="research-progress-bar" style="width: ${progressPercent.toFixed(1)}%"></div>
+                </div>
+            ` : ''}
         `;
 
-        if (!unlocked && prerequisitesMet && affordable) {
+        if (!unlocked && !isResearching && !window.activeResearch && prerequisitesMet && affordable) {
             node.addEventListener('click', () => buyResearch(research.id));
         } else {
             node.disabled = true;
@@ -204,7 +268,12 @@ function renderLaboratoryTree() {
     });
 
     const unlockedCount = window.unlockedResearch.length;
-    statusElement.textContent = `Recherches débloquées: ${unlockedCount}/${laboratoryResearchTree.length}`;
+    if (window.activeResearch) {
+        const activeNode = laboratoryResearchTree.find(node => node.id === window.activeResearch.id);
+        statusElement.textContent = `Recherche en cours: ${activeNode ? activeNode.name : 'Inconnue'}`;
+    } else {
+        statusElement.textContent = `Recherches débloquées: ${unlockedCount}/${laboratoryResearchTree.length}`;
+    }
 }
 
 window.initializeLaboratory = initializeLaboratory;

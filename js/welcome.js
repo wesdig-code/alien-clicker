@@ -106,6 +106,7 @@ function resetGameData() {
     if (Array.isArray(window.unlockedResearch)) {
         window.unlockedResearch.length = 0;
     }
+    window.activeResearch = null;
     
     // Vider le localStorage
     localStorage.removeItem('alienClickerSave');

@@ -54,6 +54,17 @@ function applyLoadedGameData(gameData, options = {}) {
         }
     }
 
+    // Charger la recherche en cours du laboratoire
+    if (gameData.activeResearch && typeof gameData.activeResearch === 'object') {
+        window.activeResearch = {
+            id: gameData.activeResearch.id,
+            startAt: gameData.activeResearch.startAt,
+            endAt: gameData.activeResearch.endAt
+        };
+    } else {
+        window.activeResearch = null;
+    }
+
     // Restaurer les fermes
     if (Array.isArray(gameData.farms)) {
         gameData.farms.forEach(savedFarm => {
@@ -123,6 +134,7 @@ function saveGame() {
         collectedItems: window.collectedItems || [],
         itemLevels: window.itemLevels || {},
         unlockedResearch: window.unlockedResearch || [],
+        activeResearch: window.activeResearch || null,
         farms: farms.map(farm => ({
             id: farm.id,
             count: farm.count,
