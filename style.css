@@ -1534,3 +1534,84 @@ body.welcome-mode #game {
     color: #ff8d3a;
     font-weight: bold;
 }
+
+/* Laboratoire */
+.laboratory-panel {
+    background: #3a3a5e;
+    border: 1px solid #5a5a8e;
+    border-radius: 10px;
+    padding: 16px;
+}
+
+.laboratory-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    gap: 10px;
+}
+
+.laboratory-header h4 {
+    margin: 0;
+    color: #00ff88;
+}
+
+.laboratory-status {
+    color: #ffe867;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.laboratory-tree {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.research-node {
+    border: 2px solid #666;
+    border-radius: 10px;
+    background: #2f2f48;
+    color: #fff;
+    padding: 12px;
+    text-align: left;
+    transition: all 0.2s ease;
+}
+
+.research-node .research-name {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+.research-node .research-desc {
+    font-size: 13px;
+    color: #e8ecff;
+    margin-bottom: 8px;
+}
+
+.research-node .research-cost {
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.research-node.available {
+    border-color: #00ff88;
+    box-shadow: 0 0 12px rgba(0, 255, 136, 0.35);
+    cursor: pointer;
+}
+
+.research-node.available:hover {
+    transform: translateY(-2px);
+    background: #3a3a5a;
+}
+
+.research-node.unlocked {
+    border-color: #66ccff;
+    background: #24405a;
+}
+
+.research-node.locked-cost,
+.research-node.locked-prereq {
+    opacity: 0.75;
+}

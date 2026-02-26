@@ -102,6 +102,10 @@ function resetGameData() {
     if (window.itemLevels && typeof window.itemLevels === 'object') {
         Object.keys(window.itemLevels).forEach(key => delete window.itemLevels[key]);
     }
+
+    if (Array.isArray(window.unlockedResearch)) {
+        window.unlockedResearch.length = 0;
+    }
     
     // Vider le localStorage
     localStorage.removeItem('alienClickerSave');
@@ -160,6 +164,11 @@ function initializeGame() {
         // Initialiser le système de drops
         if (typeof initializeDropSystem === 'function') {
             initializeDropSystem();
+        }
+
+        // Initialiser le laboratoire
+        if (typeof initializeLaboratory === 'function') {
+            initializeLaboratory();
         }
     }, 150);
 }

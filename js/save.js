@@ -46,6 +46,14 @@ function applyLoadedGameData(gameData, options = {}) {
         }
     }
 
+    // Charger les recherches du laboratoire
+    if (Array.isArray(window.unlockedResearch)) {
+        window.unlockedResearch.length = 0;
+        if (Array.isArray(gameData.unlockedResearch)) {
+            window.unlockedResearch.push(...gameData.unlockedResearch);
+        }
+    }
+
     // Restaurer les fermes
     if (Array.isArray(gameData.farms)) {
         gameData.farms.forEach(savedFarm => {
@@ -96,6 +104,9 @@ function applyLoadedGameData(gameData, options = {}) {
         if (typeof updatePrestigeDisplay === 'function') {
             updatePrestigeDisplay();
         }
+        if (typeof renderLaboratoryTree === 'function') {
+            renderLaboratoryTree();
+        }
     }
 }
 
@@ -111,6 +122,7 @@ function saveGame() {
         prestigeUpgrades: window.prestigeUpgrades || [],
         collectedItems: window.collectedItems || [],
         itemLevels: window.itemLevels || {},
+        unlockedResearch: window.unlockedResearch || [],
         farms: farms.map(farm => ({
             id: farm.id,
             count: farm.count,

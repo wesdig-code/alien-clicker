@@ -57,11 +57,12 @@
 
         <div id="laboratory-tab" class="tab-content">
             <h3 class="tab-header">Laboratoire Alien</h3>
-            <div class="save-section">
-                <h4>🧬 Recherches</h4>
-                <div class="save-info">
-                    Le laboratoire est prêt. Les futures expériences et améliorations avancées apparaîtront ici.
+            <div class="laboratory-panel">
+                <div class="laboratory-header">
+                    <h4>🧬 Arbre de Recherche</h4>
+                    <div id="laboratory-status" class="laboratory-status">Recherches débloquées: 0/0</div>
                 </div>
+                <div id="laboratory-tree" class="laboratory-tree"></div>
             </div>
         </div>
         
@@ -195,6 +196,7 @@
     <script src="js/farms.js"></script>
     <script src="js/tools.js"></script>
     <script src="js/upgrades.js"></script>
+    <script src="js/laboratory.js"></script>
     <script src="js/drops.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/save.js"></script>

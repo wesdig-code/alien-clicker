@@ -113,4 +113,8 @@ function updateDisplay() {
     if (typeof updateAllUpgradeButtons === 'function') {
         updateAllUpgradeButtons();
     }
+
+    if (typeof renderLaboratoryTree === 'function') {
+        renderLaboratoryTree();
+    }
 }

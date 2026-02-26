@@ -117,7 +117,8 @@ function updateScorePerSecond() {
     
     // Appliquer le multiplicateur de prestige des fermes
     const farmMultiplier = typeof getFarmMultiplier === 'function' ? getFarmMultiplier() : 1;
-    scorePerSecond = baseScorePerSecond * farmMultiplier;
+    const researchMultiplier = typeof getResearchFarmMultiplier === 'function' ? getResearchFarmMultiplier() : 1;
+    scorePerSecond = baseScorePerSecond * farmMultiplier * researchMultiplier;
 }
 
 function generateAutomaticScore() {

@@ -248,6 +248,9 @@ let activeEffects = [];
 function handleClickDrop(clickX, clickY) {
     // Calculer la chance totale de drop (peut être améliorée par des upgrades plus tard)
     let totalDropChance = 25; // 25% de chance qu'un item drop
+
+    const researchDropMultiplier = typeof getResearchDropChanceMultiplier === 'function' ? getResearchDropChanceMultiplier() : 1;
+    totalDropChance *= researchDropMultiplier;
     
     // Bonus de chance de drop si on a l'éclat cosmique
     if (collectedItems.includes('cosmic_shard')) {
