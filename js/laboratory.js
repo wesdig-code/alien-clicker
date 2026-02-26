@@ -205,12 +205,31 @@ function renderLaboratoryTree() {
 
     if (!treeContainer || !statusElement) return;
 
-    treeContainer.innerHTML = '';
+    // Créer les nœuds une seule fois pour éviter les vibrations visuelles
+    if (treeContainer.children.length !== laboratoryResearchTree.length) {
+        treeContainer.innerHTML = '';
+
+        laboratoryResearchTree.forEach(research => {
+            const node = document.createElement('button');
+            node.className = 'research-node';
+            node.type = 'button';
+            node.dataset.researchId = research.id;
+            node.innerHTML = `
+                <div class="research-name"></div>
+                <div class="research-desc"></div>
+                <div class="research-cost"></div>
+                <div class="research-progress" style="display: none;">
+                    <div class="research-progress-bar"></div>
+                </div>
+            `;
+
+            treeContainer.appendChild(node);
+        });
+    }
 
     laboratoryResearchTree.forEach(research => {
-        const node = document.createElement('button');
-        node.className = 'research-node';
-        node.type = 'button';
+        const node = treeContainer.querySelector(`[data-research-id="${research.id}"]`);
+        if (!node) return;
 
         const unlocked = isResearchUnlocked(research.id);
         const prerequisitesMet = arePrerequisitesMet(research);
@@ -227,37 +246,48 @@ function renderLaboratoryTree() {
         }
 
         if (isResearching) {
-            node.classList.add('researching');
+            node.className = 'research-node researching';
         } else if (unlocked) {
-            node.classList.add('unlocked');
+            node.className = 'research-node unlocked';
         } else if (prerequisitesMet && affordable) {
-            node.classList.add('available');
+            node.className = 'research-node available';
         } else if (prerequisitesMet) {
-            node.classList.add('locked-cost');
+            node.className = 'research-node locked-cost';
         } else {
-            node.classList.add('locked-prereq');
+            node.className = 'research-node locked-prereq';
         }
 
-        node.innerHTML = `
-            <div class="research-name">${research.name}</div>
-            <div class="research-desc">${research.description}</div>
-            <div class="research-cost">${
-                isResearching
-                    ? `⏳ Recherche: ${(remainingMs / 1000).toFixed(1)}s`
-                    : unlocked
-                        ? '✅ Recherché'
-                        : `Coût: ${formatNumber(research.cost)}`
-            }</div>
-            ${isResearching ? `
-                <div class="research-progress">
-                    <div class="research-progress-bar" style="width: ${progressPercent.toFixed(1)}%"></div>
-                </div>
-            ` : ''}
-        `;
+        const nameElement = node.querySelector('.research-name');
+        const descElement = node.querySelector('.research-desc');
+        const costElement = node.querySelector('.research-cost');
+        const progressElement = node.querySelector('.research-progress');
+        const progressBarElement = node.querySelector('.research-progress-bar');
+
+        if (nameElement) nameElement.textContent = research.name;
+        if (descElement) descElement.textContent = research.description;
+        if (costElement) {
+            costElement.textContent = isResearching
+                ? `⏳ Recherche: ${(remainingMs / 1000).toFixed(1)}s`
+                : unlocked
+                    ? '✅ Recherché'
+                    : `Coût: ${formatNumber(research.cost)}`;
+        }
+
+        if (progressElement && progressBarElement) {
+            if (isResearching) {
+                progressElement.style.display = 'block';
+                progressBarElement.style.width = `${progressPercent.toFixed(1)}%`;
+            } else {
+                progressElement.style.display = 'none';
+                progressBarElement.style.width = '0%';
+            }
+        }
 
         if (!unlocked && !isResearching && !window.activeResearch && prerequisitesMet && affordable) {
-            node.addEventListener('click', () => buyResearch(research.id));
+            node.onclick = () => buyResearch(research.id);
+            node.disabled = false;
         } else {
+            node.onclick = null;
             node.disabled = true;
         }
 
@@ -269,8 +299,6 @@ function renderLaboratoryTree() {
             : 'Prérequis: aucun';
 
         node.title = `${research.name}\n${research.description}\n${prereqText}`;
-
-        treeContainer.appendChild(node);
     });
 
     const unlockedCount = window.unlockedResearch.length;

@@ -1602,7 +1602,6 @@ body.welcome-mode #game {
 }
 
 .research-node.available:hover {
-    transform: translateY(-2px);
     background: #3a3a5a;
 }
 
