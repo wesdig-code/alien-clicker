@@ -134,7 +134,10 @@ function completeResearch(researchId) {
 }
 
 function updateLaboratoryState() {
-    if (!window.activeResearch) return;
+    if (!window.activeResearch) {
+        renderLaboratoryTree();
+        return;
+    }
 
     const activeNode = laboratoryResearchTree.find(node => node.id === window.activeResearch.id);
     if (!activeNode || isResearchUnlocked(window.activeResearch.id)) {
@@ -144,7 +147,10 @@ function updateLaboratoryState() {
 
     if (Date.now() >= window.activeResearch.endAt) {
         completeResearch(window.activeResearch.id);
+        return;
     }
+
+    renderLaboratoryTree();
 }
 
 function getResearchClickMultiplier() {
