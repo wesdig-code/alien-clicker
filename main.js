@@ -8,7 +8,7 @@ let game = null;
 const config = {
     type: Phaser.AUTO,
     width: 480,
-    height: 640,
+    height: 580,
     backgroundColor: '#22223b',
     parent: 'game',
     scene: {
