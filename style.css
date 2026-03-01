@@ -1145,6 +1145,10 @@ body.welcome-mode .entropy-panel {
     text-shadow: 0 0 8px rgba(59, 143, 194, 0.3);
 }
 
+.entropy-secondary-label {
+    color: #c78a3b;
+}
+
 /* Animation étoiles */
 @keyframes starfield {
     0% { background-position: 0 0; }
