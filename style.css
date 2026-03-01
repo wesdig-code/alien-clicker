@@ -911,6 +911,36 @@ body {
     animation: starfield 20s linear infinite;
 }
 
+.intro-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #0a0a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.intro-container {
+    width: min(760px, 90vw);
+    background: rgba(20, 20, 40, 0.95);
+    border: 2px solid #4a4a6e;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55);
+}
+
+.intro-text {
+    color: #dbe6ff;
+    font-size: 22px;
+    line-height: 1.6;
+    white-space: pre-line;
+    min-height: 210px;
+}
+
 .welcome-container {
     text-align: center;
     background: rgba(255, 255, 255, 0.1);
@@ -1034,6 +1064,13 @@ body {
 
 .hidden {
     display: none;
+}
+
+body.intro-mode #shop,
+body.intro-mode #game-column,
+body.intro-mode #active-effects,
+body.intro-mode #collection-panel {
+    display: none !important;
 }
 
 /* Cacher la zone de jeu quand l'écran d'accueil est visible */

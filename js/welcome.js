@@ -1,17 +1,89 @@
 // Système d'écran d'accueil
 
+let introTypingInterval = null;
+
+function getIntroPlanetContext() {
+    if (typeof getCurrentPlanet === 'function') {
+        const planet = getCurrentPlanet();
+        if (planet) {
+            return planet;
+        }
+    }
+
+    if (Array.isArray(window.galaxyPlanets)) {
+        return window.galaxyPlanets.find(planet => planet.id === window.currentPlanetId) || window.galaxyPlanets[0];
+    }
+
+    return null;
+}
+
+function buildIntroMessage() {
+    const planet = getIntroPlanetContext();
+    const planetName = planet ? `${planet.emoji} ${planet.name}` : '🪐 Orbita Prime';
+    const biome = planet?.biome || 'Nébuleuses calmes';
+
+    return [
+        'Transmission établie... ',
+        '',
+        'Commandant, votre mission commence maintenant.',
+        'Vous devez récolter l\'Entropie pour étendre notre présence dans la galaxie.',
+        '',
+        `Arrivée confirmée sur ${planetName}.`,
+        `Environnement détecté: ${biome}.`,
+        '',
+        'Préparez le premier cycle d\'extraction.'
+    ].join('\n');
+}
+
+function playIntroSequence() {
+    const introScreen = document.getElementById('intro-screen');
+    const introText = document.getElementById('intro-text');
+    if (!introScreen || !introText) {
+        return;
+    }
+
+    if (introTypingInterval) {
+        clearInterval(introTypingInterval);
+        introTypingInterval = null;
+    }
+
+    const message = buildIntroMessage();
+    let charIndex = 0;
+
+    introText.textContent = '';
+    document.body.classList.add('intro-mode');
+    introScreen.classList.remove('hidden');
+
+    introTypingInterval = setInterval(() => {
+        charIndex += 1;
+        introText.textContent = message.slice(0, charIndex);
+
+        if (charIndex >= message.length) {
+            clearInterval(introTypingInterval);
+            introTypingInterval = null;
+
+            setTimeout(() => {
+                introScreen.classList.add('hidden');
+                document.body.classList.remove('intro-mode');
+            }, 850);
+        }
+    }, 32);
+}
+
+function launchGameSession() {
+    hideWelcomeScreen();
+    initializeGame();
+    playIntroSequence();
+}
+
 // Fonction pour démarrer une nouvelle partie
 function startNewGame() {
     console.log('Démarrage d\'une nouvelle partie');
     
     // Réinitialiser toutes les données de jeu
     resetGameData();
-    
-    // Cacher l'écran d'accueil et afficher l'interface de jeu
-    hideWelcomeScreen();
-    
-    // Initialiser le jeu
-    initializeGame();
+
+    launchGameSession();
 }
 
 // Fonction pour afficher le dialogue de chargement
@@ -49,12 +121,8 @@ function loadGameFromFile() {
             } else {
                 throw new Error('Système de chargement indisponible');
             }
-            
-            // Cacher l'écran d'accueil et afficher l'interface de jeu
-            hideWelcomeScreen();
-            
-            // Initialiser le jeu avec les données chargées (gère l'affichage automatiquement)
-            initializeGame();
+
+            launchGameSession();
             
             console.log('Partie chargée avec succès !');
             
@@ -208,9 +276,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     throw new Error('Système de chargement indisponible');
                 }
-                
-                hideWelcomeScreen();
-                initializeGame();
+
+                launchGameSession();
             } catch (error) {
                 console.error('Erreur sauvegarde auto:', error);
                 startNewGame();
