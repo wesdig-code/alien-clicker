@@ -33,6 +33,7 @@ function create() {
     // Créer la zone cliquable HTML au lieu du cercle Phaser
     console.log('👽 Création de la zone alien...');
     createAlienClickArea();
+    initializeCenterHarvestPanel();
 
     // Initialiser les fermes et outils dans l'interface
     console.log('🛸 Initialisation des fermes...');
@@ -54,6 +55,48 @@ function create() {
     });
     
     console.log('✅ Initialisation terminée !');
+}
+
+function initializeCenterHarvestPanel() {
+    const gameDiv = document.getElementById('game');
+    if (!gameDiv) return;
+
+    if (document.getElementById('center-harvest-panel')) {
+        return;
+    }
+
+    const panel = document.createElement('div');
+    panel.id = 'center-harvest-panel';
+    panel.className = 'center-harvest-panel';
+    panel.innerHTML = `
+        <div id="center-harvest-title" class="center-harvest-title">Planète</div>
+        <div id="center-harvest-text" class="center-harvest-text">Récolte: 0 / 0 Entropie</div>
+        <div class="center-harvest-progress">
+            <div id="center-harvest-bar" class="center-harvest-bar"></div>
+        </div>
+    `;
+
+    gameDiv.appendChild(panel);
+}
+
+function updateCenterHarvestPanel() {
+    const titleElement = document.getElementById('center-harvest-title');
+    const textElement = document.getElementById('center-harvest-text');
+    const barElement = document.getElementById('center-harvest-bar');
+
+    if (!titleElement || !textElement || !barElement) return;
+    if (typeof getCurrentPlanet !== 'function') return;
+
+    const currentPlanet = getCurrentPlanet();
+    if (!currentPlanet) return;
+
+    const harvested = window.planetHarvested?.[currentPlanet.id] || 0;
+    const cap = currentPlanet.harvestCap || 0;
+    const percent = cap > 0 ? Math.min(100, (harvested / cap) * 100) : 0;
+
+    titleElement.textContent = `${currentPlanet.emoji} ${currentPlanet.name}`;
+    textElement.textContent = `Récolte: ${formatNumber(harvested)} / ${formatNumber(cap)} Entropie`;
+    barElement.style.width = `${percent.toFixed(2)}%`;
 }
 
 function createAlienClickArea() {
@@ -120,5 +163,7 @@ function updateDisplay() {
     if (typeof renderGalaxyMap === 'function') {
         renderGalaxyMap();
     }
+
+    updateCenterHarvestPanel();
 
 }
