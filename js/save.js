@@ -65,6 +65,19 @@ function applyLoadedGameData(gameData, options = {}) {
         window.activeResearch = null;
     }
 
+    // Charger la carte galactique
+    if (typeof gameData.currentPlanetId === 'string') {
+        window.currentPlanetId = gameData.currentPlanetId;
+    } else {
+        window.currentPlanetId = 'orbita_prime';
+    }
+
+    if (Array.isArray(gameData.visitedPlanets) && gameData.visitedPlanets.length > 0) {
+        window.visitedPlanets = gameData.visitedPlanets;
+    } else {
+        window.visitedPlanets = ['orbita_prime'];
+    }
+
     // Restaurer les fermes
     if (Array.isArray(gameData.farms)) {
         gameData.farms.forEach(savedFarm => {
@@ -118,6 +131,9 @@ function applyLoadedGameData(gameData, options = {}) {
         if (typeof renderLaboratoryTree === 'function') {
             renderLaboratoryTree();
         }
+        if (typeof renderGalaxyMap === 'function') {
+            renderGalaxyMap();
+        }
     }
 }
 
@@ -135,6 +151,8 @@ function saveGame() {
         itemLevels: window.itemLevels || {},
         unlockedResearch: window.unlockedResearch || [],
         activeResearch: window.activeResearch || null,
+        currentPlanetId: window.currentPlanetId || 'orbita_prime',
+        visitedPlanets: window.visitedPlanets || ['orbita_prime'],
         farms: farms.map(farm => ({
             id: farm.id,
             count: farm.count,

@@ -114,4 +114,8 @@ function updateDisplay() {
         updateAllUpgradeButtons();
     }
 
+    if (typeof renderGalaxyMap === 'function') {
+        renderGalaxyMap();
+    }
+
 }

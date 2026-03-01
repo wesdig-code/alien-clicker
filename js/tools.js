@@ -120,7 +120,8 @@ function updateClickPower() {
     // Appliquer le multiplicateur de prestige des outils
     const toolMultiplier = typeof getToolMultiplier === 'function' ? getToolMultiplier() : 1;
     const researchMultiplier = typeof getResearchClickMultiplier === 'function' ? getResearchClickMultiplier() : 1;
-    clickPower = baseClickPower * toolMultiplier * researchMultiplier;
+    const planetMultiplier = typeof getPlanetClickMultiplier === 'function' ? getPlanetClickMultiplier() : 1;
+    clickPower = baseClickPower * toolMultiplier * researchMultiplier * planetMultiplier;
     
     // Mettre à jour l'affichage immédiatement
     if (window.clickPowerText) {

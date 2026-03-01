@@ -107,6 +107,9 @@ function resetGameData() {
         window.unlockedResearch.length = 0;
     }
     window.activeResearch = null;
+
+    window.currentPlanetId = 'orbita_prime';
+    window.visitedPlanets = ['orbita_prime'];
     
     // Vider le localStorage
     localStorage.removeItem('alienClickerSave');
@@ -170,6 +173,11 @@ function initializeGame() {
         // Initialiser le laboratoire
         if (typeof initializeLaboratory === 'function') {
             initializeLaboratory();
+        }
+
+        // Initialiser la carte galactique
+        if (typeof initializeGalaxyMap === 'function') {
+            initializeGalaxyMap();
         }
     }, 150);
 }

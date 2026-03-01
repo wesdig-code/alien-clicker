@@ -40,6 +40,7 @@
         <div class="shop-tabs">
             <button class="tab-button active" onclick="switchTab('farms')">🛸 Fermes</button>
             <button class="tab-button" onclick="switchTab('tools')">🔧 Outils</button>
+            <button class="tab-button" onclick="switchTab('galaxy')">🗺️ Carte</button>
             <button class="tab-button" onclick="switchTab('laboratory')">🧪 Laboratoire</button>
             <button class="tab-button" onclick="switchTab('wormhole')">🌌 Wormhole</button>
             <button class="tab-button" onclick="switchTab('save')">⚙️ Option</button>
@@ -53,6 +54,19 @@
         <div id="tools-tab" class="tab-content">
             <h3 class="tab-header">Outils de Clic</h3>
             <div id="tool-container"></div>
+        </div>
+
+        <div id="galaxy-tab" class="tab-content">
+            <h3 class="tab-header">Carte Galactique</h3>
+            <div class="galaxy-panel">
+                <div class="current-planet-panel">
+                    <div class="current-planet-label">Position actuelle</div>
+                    <div id="current-planet-name" class="current-planet-name">🪐 Orbita Prime</div>
+                    <div id="current-planet-biome" class="current-planet-biome">Nébuleuses calmes</div>
+                    <div id="current-planet-bonus" class="current-planet-bonus">Clic x1.00 • Fermes x1.00</div>
+                </div>
+                <div id="galaxy-grid" class="galaxy-grid"></div>
+            </div>
         </div>
 
         <div id="laboratory-tab" class="tab-content">
@@ -193,6 +207,7 @@
     <!-- Scripts dans l'ordre de dépendance -->
     <script src="js/data.js"></script>
     <script src="js/utils.js"></script>
+    <script src="js/galaxy.js"></script>
     <script src="js/farms.js"></script>
     <script src="js/tools.js"></script>
     <script src="js/upgrades.js"></script>

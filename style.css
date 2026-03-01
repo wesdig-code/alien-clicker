@@ -1636,3 +1636,126 @@ body.welcome-mode #game {
     background: linear-gradient(90deg, #ffe867, #ffb347);
     transition: width 0.1s linear;
 }
+
+/* Carte galactique */
+.galaxy-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.current-planet-panel {
+    background: #3a3a5e;
+    border: 1px solid #5a5a8e;
+    border-radius: 10px;
+    padding: 14px;
+}
+
+.current-planet-label {
+    color: #aab4d8;
+    font-size: 12px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+
+.current-planet-name {
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.current-planet-biome {
+    color: #d4defd;
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+
+.current-planet-bonus {
+    color: #ffe867;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.galaxy-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.planet-card {
+    background: #343452;
+    border: 1px solid #56567e;
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.planet-card.current {
+    border-color: #66ccff;
+    box-shadow: 0 0 12px rgba(102, 204, 255, 0.3);
+}
+
+.planet-card.available {
+    border-color: #00ff88;
+}
+
+.planet-card.locked {
+    opacity: 0.7;
+}
+
+.planet-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+.planet-biome {
+    font-size: 12px;
+    color: #cfd7f5;
+}
+
+.planet-desc {
+    font-size: 12px;
+    color: #d9e0fb;
+    min-height: 34px;
+}
+
+.planet-bonus {
+    font-size: 12px;
+    color: #ffe867;
+    font-weight: bold;
+}
+
+.planet-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 11px;
+    color: #b7c1e6;
+}
+
+.planet-travel-button {
+    margin-top: 4px;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.planet-travel-button.available {
+    background: linear-gradient(45deg, #00ff88, #00cc66);
+    color: #04180e;
+    cursor: pointer;
+}
+
+.planet-travel-button.current,
+.planet-travel-button.locked {
+    background: #5b5b7a;
+    color: #d8dcef;
+    cursor: not-allowed;
+}
