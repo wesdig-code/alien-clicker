@@ -1,5 +1,7 @@
 body {
     --layout-top-offset: 20px;
+    --entropy-panel-height: 120px;
+    --game-offset-below-entropy: 140px;
     background: #181824;
     color: #fff;
     font-family: 'Segoe UI', Arial, sans-serif;
@@ -28,7 +30,7 @@ body {
 }
 
 #game {
-    margin-top: 20px;
+    margin-top: var(--game-offset-below-entropy);
     background: #2a2a3e;
     border: 2px solid #4a4a6e;
     border-radius: 10px;

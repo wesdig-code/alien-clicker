@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <title>Alien Clicker</title>
@@ -7,13 +8,14 @@
     <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <!-- Écran d'accueil -->
     <div id="welcome-screen" class="welcome-screen">
         <div class="welcome-container">
             <h1 class="welcome-title">👽 ALIEN CLICKER 🛸</h1>
             <p class="welcome-subtitle">Cliquez, collectez et conquérez la galaxie !</p>
-            
+
             <div class="welcome-buttons">
                 <button class="welcome-btn new-game-btn" onclick="startNewGame()">
                     🚀 Nouvelle Partie
@@ -22,7 +24,7 @@
                     💾 Charger une Partie
                 </button>
             </div>
-            
+
             <!-- Dialogue de chargement de fichier -->
             <div id="load-dialog" class="load-dialog hidden">
                 <h3>Charger une Sauvegarde</h3>
@@ -45,12 +47,12 @@
             <button class="tab-button" onclick="switchTab('wormhole')">🌌 Wormhole</button>
             <button class="tab-button" onclick="switchTab('save')">⚙️ Option</button>
         </div>
-        
+
         <div id="farms-tab" class="tab-content active">
             <h3 class="tab-header">Fermes Aliens</h3>
             <div id="farm-container"></div>
         </div>
-        
+
         <div id="tools-tab" class="tab-content">
             <h3 class="tab-header">Outils de Clic</h3>
             <div id="tool-container"></div>
@@ -68,7 +70,8 @@
                     <div id="current-planet-name" class="current-planet-name">🪐 Orbita Prime</div>
                     <div id="current-planet-biome" class="current-planet-biome">Nébuleuses calmes</div>
                     <div id="current-planet-bonus" class="current-planet-bonus">Clic x1.00 • Fermes x1.00</div>
-                    <div id="current-planet-harvest-text" class="current-planet-harvest-text">Récolte: 0 / 0 Entropie</div>
+                    <div id="current-planet-harvest-text" class="current-planet-harvest-text">Récolte: 0 / 0 Entropie
+                    </div>
                     <div class="current-planet-harvest-progress">
                         <div id="current-planet-harvest-bar" class="current-planet-harvest-bar"></div>
                     </div>
@@ -87,34 +90,34 @@
                 <div id="laboratory-tree" class="laboratory-tree"></div>
             </div>
         </div>
-        
+
         <div id="wormhole-tab" class="tab-content">
             <h3 class="tab-header">🌌 Wormhole - Prestige</h3>
-            
+
             <div class="wormhole-info">
                 <div class="stardust-display">
                     <span class="stardust-label">✨ Stardust disponible:</span>
                     <span class="stardust-value" id="stardust-amount">0</span>
                 </div>
-                
+
                 <div class="prestige-section">
                     <h4>🚀 Voyage Interdimensionnel</h4>
                     <p class="prestige-description">
                         Traversez un wormhole pour recommencer votre aventure avec des bonus permanents !
                         Votre entropie actuelle sera convertie en <strong>Stardust</strong>.
                     </p>
-                    
+
                     <div class="prestige-preview">
                         <span>Entropie actuelle: <span id="current-score-preview">0</span></span>
                         <span>Stardust à gagner: <span id="stardust-gain-preview">0</span></span>
                     </div>
-                    
+
                     <button id="prestige-button" class="prestige-btn" onclick="performPrestige()">
                         🌌 Entrer dans le Wormhole
                     </button>
                 </div>
             </div>
-            
+
             <div class="prestige-upgrades">
                 <h4>⭐ Améliorations Permanentes</h4>
                 <div id="prestige-upgrades-container">
@@ -122,10 +125,10 @@
                 </div>
             </div>
         </div>
-        
+
         <div id="save-tab" class="tab-content">
             <h3 class="tab-header">Gestion des Parties</h3>
-            
+
             <div class="game-stats">
                 <div class="stat-line">
                     <span class="stat-label">Entropie actuelle:</span>
@@ -156,7 +159,7 @@
                     <span class="stat-value" id="total-tools">0</span>
                 </div>
             </div>
-            
+
             <div class="save-section">
                 <h4>🌌 Effets Visuels</h4>
                 <button class="save-button" id="toggle-background" onclick="toggleBackgroundEmojis()">
@@ -166,7 +169,7 @@
                     Active/désactive les émojis flottants en arrière-plan
                 </div>
             </div>
-            
+
             <div class="save-section">
                 <h4>💾 Sauvegarder la partie</h4>
                 <button class="save-button" onclick="saveGame()">Télécharger la sauvegarde</button>
@@ -175,7 +178,7 @@
                     Nom: alien-clicker-save.json
                 </div>
             </div>
-            
+
             <div class="save-section">
                 <h4>📁 Charger une partie</h4>
                 <input type="file" class="file-input" id="load-file" accept=".json" onchange="loadGame(event)">
@@ -186,10 +189,8 @@
             </div>
         </div>
     </div>
-    
-    <!-- Zone de jeu Phaser (toujours visible) -->
-    <div id="game">
-        <!-- Panel dédié des compteurs d'entropie -->
+
+    <div id="entropie">
         <div id="entropy-panel" class="entropy-panel hidden">
             <div class="entropy-panel-header">
                 <div class="entropy-panel-title">⚛️ Entropie</div>
@@ -201,7 +202,12 @@
             </div>
         </div>
     </div>
-    
+
+    <!-- Zone de jeu Phaser (toujours visible) -->
+    <div id="game">
+        <!-- Panel dédié des compteurs d'entropie -->
+    </div>
+
     <!-- Zone d'affichage des effets actifs -->
     <div id="active-effects" class="active-effects-container hidden">
         <div class="effects-title">Effets Actifs</div>
@@ -209,7 +215,7 @@
             <!-- Les effets seront ajoutés dynamiquement ici -->
         </div>
     </div>
-    
+
     <!-- Panel de collection d'items permanents -->
     <div id="collection-panel" class="collection-panel hidden">
         <div class="collection-header">
@@ -223,7 +229,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Scripts dans l'ordre de dépendance -->
     <script src="js/data.js"></script>
     <script src="js/utils.js"></script>
@@ -241,4 +247,5 @@
     <script src="js/game.js"></script>
     <script src="main.js"></script>
 </body>
+
 </html>
