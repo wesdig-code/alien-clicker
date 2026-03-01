@@ -22,11 +22,11 @@ function create() {
     initializeUpgradeProperties();
     
     console.log('📊 Création des textes Phaser...');
-    scoreText = this.add.text(20, 20, 'Score: 0', { fontSize: '32px', fill: '#fff' });
-    scorePerSecondText = this.add.text(20, 60, 'Points/sec: 0', { fontSize: '18px', fill: '#00ff88' });
+    scoreText = this.add.text(20, 20, 'Entropie: 0', { fontSize: '32px', fill: '#fff' });
+    scorePerSecondText = this.add.text(20, 60, 'Entropie/sec: 0', { fontSize: '18px', fill: '#00ff88' });
     
     // Ajouter l'affichage des points par clic
-    const clickPowerText = this.add.text(20, 90, 'Points/clic: 1', { fontSize: '18px', fill: '#ff8800' });
+    const clickPowerText = this.add.text(20, 90, 'Entropie/clic: 1', { fontSize: '18px', fill: '#ff8800' });
     // Rendre accessible globalement
     window.clickPowerText = clickPowerText;
     
@@ -97,12 +97,12 @@ function update() {
 }
 
 function updateDisplay() {
-    scoreText.setText('Score: ' + Math.floor(score));
-    scorePerSecondText.setText('Points/sec: ' + scorePerSecond);
+    scoreText.setText('Entropie: ' + Math.floor(score));
+    scorePerSecondText.setText('Entropie/sec: ' + scorePerSecond);
     
     // Mettre à jour l'affichage des points par clic
     if (window.clickPowerText) {
-        window.clickPowerText.setText('Points/clic: ' + clickPower);
+        window.clickPowerText.setText('Entropie/clic: ' + clickPower);
     }
     
     updateFarmsDisplay();

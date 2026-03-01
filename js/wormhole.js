@@ -73,7 +73,7 @@ function performPrestige() {
     const stardustGain = calculateStardustGain(totalScore);
     
     if (stardustGain === 0) {
-        alert('Vous devez avoir généré au moins 1000 points au total pour utiliser le Wormhole !');
+        alert('Vous devez avoir généré au moins 1000 Entropie au total pour utiliser le Wormhole !');
         return;
     }
     
@@ -81,12 +81,12 @@ function performPrestige() {
     const confirmMessage = `Êtes-vous sûr de vouloir traverser le Wormhole ?
     
 Statistiques actuelles :
-• Score actuel : ${formatNumber(currentScore)}
-• Score total généré : ${formatNumber(totalScore)}
+• Entropie actuelle : ${formatNumber(currentScore)}
+• Entropie totale générée : ${formatNumber(totalScore)}
 • Tout sera remis à zéro sauf vos améliorations permanentes
 
 Vous allez gagner :
-• ${stardustGain} Stardust (basé sur votre score total)
+• ${stardustGain} Stardust (basé sur votre entropie totale)
     
 Cette action est irréversible !`;
     
@@ -279,7 +279,7 @@ function updatePrestigeDisplay() {
         if (prestigeButton) {
             if (potentialGain === 0) {
                 prestigeButton.disabled = true;
-                prestigeButton.textContent = '🌌 Wormhole (min. 1000 points total)';
+                prestigeButton.textContent = '🌌 Wormhole (min. 1000 Entropie total)';
             } else {
                 prestigeButton.disabled = false;
                 prestigeButton.textContent = '🌌 Entrer dans le Wormhole';
