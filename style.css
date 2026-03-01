@@ -1145,7 +1145,7 @@ body.welcome-mode .entropy-panel {
     text-shadow: 0 0 8px rgba(59, 143, 194, 0.3);
 }
 
-.entropy-secondary-label {
+.entropy-secondary-value {
     color: #c78a3b;
 }
 
