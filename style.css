@@ -1135,18 +1135,16 @@ body.welcome-mode .entropy-panel {
 
 .entropy-current-row {
     background: rgba(102, 204, 255, 0.14);
-    border: 1px solid rgba(102, 204, 255, 0.4);
     border-radius: 8px;
-    padding: 8px 10px;
     margin-bottom: 6px;
     color: #ffffff;
 }
 
 .entropy-current-value {
-    color: #66ccff;
+    color: #3b8fc2;
     font-size: 18px;
     font-weight: 900;
-    text-shadow: 0 0 10px rgba(102, 204, 255, 0.45);
+    text-shadow: 0 0 8px rgba(59, 143, 194, 0.3);
 }
 
 /* Animation étoiles */
