@@ -1133,6 +1133,22 @@ body.welcome-mode .entropy-panel {
     font-weight: bold;
 }
 
+.entropy-current-row {
+    background: rgba(102, 204, 255, 0.14);
+    border: 1px solid rgba(102, 204, 255, 0.4);
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    color: #ffffff;
+}
+
+.entropy-current-value {
+    color: #66ccff;
+    font-size: 18px;
+    font-weight: 900;
+    text-shadow: 0 0 10px rgba(102, 204, 255, 0.45);
+}
+
 /* Animation étoiles */
 @keyframes starfield {
     0% { background-position: 0 0; }
