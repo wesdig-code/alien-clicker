@@ -1,6 +1,7 @@
 // Système d'écran d'accueil
 
 let introTypingInterval = null;
+let introHideTimeout = null;
 
 function getIntroPlanetContext() {
     if (typeof getCurrentPlanet === 'function') {
@@ -47,25 +48,47 @@ function playIntroSequence() {
         introTypingInterval = null;
     }
 
+    if (introHideTimeout) {
+        clearTimeout(introHideTimeout);
+        introHideTimeout = null;
+    }
+
     const message = buildIntroMessage();
     let charIndex = 0;
+    let introCompleted = false;
+
+    const completeIntro = () => {
+        if (introCompleted) return;
+        introCompleted = true;
+
+        if (introTypingInterval) {
+            clearInterval(introTypingInterval);
+            introTypingInterval = null;
+        }
+
+        introText.textContent = message;
+        introHideTimeout = setTimeout(() => {
+            introScreen.classList.add('hidden');
+            document.body.classList.remove('intro-mode');
+            introHideTimeout = null;
+        }, 850);
+    };
 
     introText.textContent = '';
     document.body.classList.add('intro-mode');
     introScreen.classList.remove('hidden');
+    introScreen.onclick = () => {
+        if (!introCompleted) {
+            completeIntro();
+        }
+    };
 
     introTypingInterval = setInterval(() => {
         charIndex += 1;
         introText.textContent = message.slice(0, charIndex);
 
         if (charIndex >= message.length) {
-            clearInterval(introTypingInterval);
-            introTypingInterval = null;
-
-            setTimeout(() => {
-                introScreen.classList.add('hidden');
-                document.body.classList.remove('intro-mode');
-            }, 850);
+            completeIntro();
         }
     }, 32);
 }
