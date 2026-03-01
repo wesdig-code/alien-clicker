@@ -118,12 +118,32 @@ function updateCenterHarvestPanel() {
     barElement.style.width = `${percent.toFixed(2)}%`;
 }
 
+function getCurrentPlanetImagePath() {
+    if (Array.isArray(window.galaxyPlanets) && window.galaxyPlanets.length > 0) {
+        const currentPlanetId = window.currentPlanetId || 'orbita_prime';
+        const index = window.galaxyPlanets.findIndex(planet => planet.id === currentPlanetId);
+        const safeIndex = index >= 0 ? index : 0;
+        const imageNumber = String(safeIndex % 10).padStart(2, '0');
+        return `assets/planet${imageNumber}.png`;
+    }
+
+    return 'assets/planet00.png';
+}
+
+function updateAlienClickAreaVisual() {
+    const alienArea = document.getElementById('alien-click-area');
+    if (!alienArea) return;
+
+    const imagePath = getCurrentPlanetImagePath();
+    alienArea.style.backgroundImage = `url("${imagePath}")`;
+}
+
 function createAlienClickArea() {
     const gameDiv = document.getElementById('game');
     
     const alienArea = document.createElement('div');
+    alienArea.id = 'alien-click-area';
     alienArea.className = 'alien-click-area';
-    alienArea.innerHTML = '👽';
     
     alienArea.addEventListener('click', (event) => {
         // Calculer les points avec le multiplicateur des drops
@@ -155,6 +175,7 @@ function createAlienClickArea() {
     // Positionner la zone alien au centre du canvas
     gameDiv.style.position = 'relative';
     gameDiv.appendChild(alienArea);
+    updateAlienClickAreaVisual();
 }
 
 function update() {
@@ -185,5 +206,6 @@ function updateDisplay() {
 
     updateEntropyPanel();
     updateCenterHarvestPanel();
+    updateAlienClickAreaVisual();
 
 }
