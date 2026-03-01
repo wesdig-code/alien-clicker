@@ -65,9 +65,9 @@ body {
 .center-harvest-panel {
     position: absolute;
     top: 12px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 360px;
+    left: 12px;
+    right: 12px;
+    width: auto;
     background: rgba(24, 24, 42, 0.78);
     border: 1px solid rgba(110, 110, 160, 0.7);
     border-radius: 10px;
