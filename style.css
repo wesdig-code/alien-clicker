@@ -1027,38 +1027,46 @@ body.welcome-mode .entropy-panel {
 }
 
 .entropy-panel {
-    position: absolute;
-    top: 8px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 360px;
+    position: fixed;
+    top: 20px;
+    right: 500px;
+    width: 300px;
     background: rgba(42, 42, 62, 0.95);
     border: 2px solid #4a4a6e;
     border-radius: 10px;
-    padding: 12px;
+    padding: 0;
     z-index: 998;
     backdrop-filter: blur(10px);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    pointer-events: none;
 }
 
 .entropy-panel.hidden {
     display: none;
 }
 
+.entropy-panel-header {
+    background: rgba(26, 26, 46, 0.8);
+    border-radius: 8px 8px 0 0;
+    border-bottom: 1px solid #4a4a6e;
+    padding: 10px 14px;
+}
+
+.entropy-panel-content {
+    padding: 10px 14px;
+}
+
 .entropy-panel-title {
     color: #ffffff;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: bold;
-    margin-bottom: 8px;
-    text-align: center;
+    text-align: left;
 }
 
 .entropy-panel-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 4px 0;
+    padding: 6px 0;
     color: #dbe6ff;
     font-size: 13px;
     font-weight: bold;
