@@ -29,10 +29,16 @@ function create() {
     const clickPowerText = this.add.text(20, 90, 'Entropie/clic: 1', { fontSize: '18px', fill: '#ff8800' });
     // Rendre accessible globalement
     window.clickPowerText = clickPowerText;
+
+    // Les textes HUD sont maintenant affichés dans un panel HTML dédié
+    scoreText.setVisible(false);
+    scorePerSecondText.setVisible(false);
+    clickPowerText.setVisible(false);
     
     // Créer la zone cliquable HTML au lieu du cercle Phaser
     console.log('👽 Création de la zone alien...');
     createAlienClickArea();
+    initializeCenterStatsPanel();
     initializeCenterHarvestPanel();
 
     // Initialiser les fermes et outils dans l'interface
@@ -57,6 +63,38 @@ function create() {
     console.log('✅ Initialisation terminée !');
 }
 
+function initializeCenterStatsPanel() {
+    const gameDiv = document.getElementById('game');
+    if (!gameDiv) return;
+
+    if (document.getElementById('center-stats-panel')) {
+        return;
+    }
+
+    const panel = document.createElement('div');
+    panel.id = 'center-stats-panel';
+    panel.className = 'center-stats-panel';
+    panel.innerHTML = `
+        <div class="center-stats-row"><span>Entropie</span><span id="center-entropy-value">0</span></div>
+        <div class="center-stats-row"><span>Entropie/sec</span><span id="center-entropy-sec-value">0</span></div>
+        <div class="center-stats-row"><span>Entropie/clic</span><span id="center-entropy-click-value">1</span></div>
+    `;
+
+    gameDiv.appendChild(panel);
+}
+
+function updateCenterStatsPanel() {
+    const entropyValue = document.getElementById('center-entropy-value');
+    const entropySecValue = document.getElementById('center-entropy-sec-value');
+    const entropyClickValue = document.getElementById('center-entropy-click-value');
+
+    if (!entropyValue || !entropySecValue || !entropyClickValue) return;
+
+    entropyValue.textContent = formatNumber(score);
+    entropySecValue.textContent = formatNumber(scorePerSecond);
+    entropyClickValue.textContent = formatNumber(clickPower);
+}
+
 function initializeCenterHarvestPanel() {
     const gameDiv = document.getElementById('game');
     if (!gameDiv) return;
@@ -70,10 +108,10 @@ function initializeCenterHarvestPanel() {
     panel.className = 'center-harvest-panel';
     panel.innerHTML = `
         <div id="center-harvest-title" class="center-harvest-title">Planète</div>
-        <div id="center-harvest-text" class="center-harvest-text">Récolte: 0 / 0 Entropie</div>
         <div class="center-harvest-progress">
             <div id="center-harvest-bar" class="center-harvest-bar"></div>
         </div>
+        <div id="center-harvest-text" class="center-harvest-text">Récolte: 0 / 0 Entropie</div>
     `;
 
     gameDiv.appendChild(panel);
@@ -164,6 +202,7 @@ function updateDisplay() {
         renderGalaxyMap();
     }
 
+    updateCenterStatsPanel();
     updateCenterHarvestPanel();
 
 }

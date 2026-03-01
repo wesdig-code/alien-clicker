@@ -43,35 +43,58 @@ body {
     border-radius: 8px;
 }
 
-.center-harvest-panel {
+.center-stats-panel {
     position: absolute;
-    top: 120px;
+    top: 16px;
     left: 20px;
     width: 320px;
-    background: rgba(24, 24, 42, 0.78);
-    border: 1px solid rgba(110, 110, 160, 0.7);
+    background: rgba(24, 24, 42, 0.82);
+    border: 1px solid rgba(110, 110, 160, 0.75);
     border-radius: 10px;
     padding: 8px 10px;
     backdrop-filter: blur(3px);
     z-index: 6;
 }
 
+.center-stats-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    font-weight: bold;
+    color: #e7eeff;
+    line-height: 1.35;
+}
+
+.center-harvest-panel {
+    position: absolute;
+    top: 102px;
+    left: 20px;
+    width: 360px;
+    background: rgba(24, 24, 42, 0.78);
+    border: 1px solid rgba(110, 110, 160, 0.7);
+    border-radius: 10px;
+    padding: 10px 12px;
+    backdrop-filter: blur(3px);
+    z-index: 6;
+}
+
 .center-harvest-title {
     color: #ffffff;
-    font-size: 13px;
+    font-size: 18px;
     font-weight: bold;
-    margin-bottom: 4px;
+    margin-bottom: 8px;
 }
 
 .center-harvest-text {
     color: #dbe6ff;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: bold;
+    margin-top: 8px;
 }
 
 .center-harvest-progress {
-    margin-top: 6px;
-    height: 8px;
+    height: 14px;
     border-radius: 999px;
     background: rgba(0, 0, 0, 0.45);
     border: 1px solid rgba(255, 255, 255, 0.2);
