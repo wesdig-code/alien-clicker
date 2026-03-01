@@ -29,8 +29,23 @@ body {
     overflow: hidden; /* Pour contrôler le scroll des enfants */
 }
 
+#game-column {
+    order: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+}
+
+#entropie {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
 #game {
-    margin-top: var(--game-offset-below-entropy);
+    margin-top: 0;
     background: #2a2a3e;
     border: 2px solid #4a4a6e;
     border-radius: 10px;
@@ -1025,16 +1040,20 @@ body.welcome-mode #game {
     display: none;
 }
 
+body.welcome-mode #entropie {
+    display: none;
+}
+
 body.welcome-mode .entropy-panel {
     display: none;
 }
 
 .entropy-panel {
-    position: absolute;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 360px;
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    width: 484px;
     background: rgba(42, 42, 62, 0.95);
     border: 2px solid #4a4a6e;
     border-radius: 10px;
@@ -1042,7 +1061,6 @@ body.welcome-mode .entropy-panel {
     z-index: 998;
     backdrop-filter: blur(10px);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    pointer-events: none;
 }
 
 .entropy-panel.hidden {
