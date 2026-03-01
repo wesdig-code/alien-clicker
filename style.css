@@ -1135,7 +1135,6 @@ body.welcome-mode .entropy-panel {
 
 .entropy-current-row {
     background: rgba(102, 204, 255, 0.14);
-    border-radius: 8px;
     margin-bottom: 6px;
     color: #ffffff;
 }
