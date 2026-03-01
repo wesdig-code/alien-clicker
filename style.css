@@ -70,7 +70,7 @@ body {
     width: auto;
     background: rgba(24, 24, 42, 0.78);
     border: 1px solid rgba(110, 110, 160, 0.7);
-    border-radius: 10px;
+    border-radius: 0;
     padding: 10px 12px;
     backdrop-filter: blur(3px);
     z-index: 6;
