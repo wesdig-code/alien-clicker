@@ -54,6 +54,14 @@ function applyLoadedGameData(gameData, options = {}) {
         }
     }
 
+    window.researchPoints = Number.isFinite(gameData.researchPoints) ? gameData.researchPoints : 0;
+
+    if (Array.isArray(gameData.claimedPlanetResearchRewards)) {
+        window.claimedPlanetResearchRewards = gameData.claimedPlanetResearchRewards;
+    } else {
+        window.claimedPlanetResearchRewards = [];
+    }
+
     // Charger la recherche en cours du laboratoire
     if (gameData.activeResearch && typeof gameData.activeResearch === 'object') {
         window.activeResearch = {
@@ -156,10 +164,12 @@ function saveGame() {
         collectedItems: window.collectedItems || [],
         itemLevels: window.itemLevels || {},
         unlockedResearch: window.unlockedResearch || [],
+        researchPoints: window.researchPoints || 0,
         activeResearch: window.activeResearch || null,
         currentPlanetId: window.currentPlanetId || 'orbita_prime',
         visitedPlanets: window.visitedPlanets || ['orbita_prime'],
         planetHarvested: window.planetHarvested || { orbita_prime: 0 },
+        claimedPlanetResearchRewards: window.claimedPlanetResearchRewards || [],
         farms: farms.map(farm => ({
             id: farm.id,
             count: farm.count,

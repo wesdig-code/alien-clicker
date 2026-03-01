@@ -106,11 +106,13 @@ function resetGameData() {
     if (Array.isArray(window.unlockedResearch)) {
         window.unlockedResearch.length = 0;
     }
+    window.researchPoints = 0;
     window.activeResearch = null;
 
     window.currentPlanetId = 'orbita_prime';
     window.visitedPlanets = ['orbita_prime'];
     window.planetHarvested = { orbita_prime: 0 };
+    window.claimedPlanetResearchRewards = [];
     
     // Vider le localStorage
     localStorage.removeItem('alienClickerSave');

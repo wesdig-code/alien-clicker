@@ -59,6 +59,7 @@ const laboratoryResearchTree = [
 
 window.unlockedResearch = window.unlockedResearch || [];
 window.activeResearch = window.activeResearch || null;
+window.researchPoints = window.researchPoints || 0;
 
 const LAB_RESEARCH_DURATION_MS = 10000;
 let laboratoryIntervalId = null;
@@ -96,9 +97,11 @@ function buyResearch(researchId) {
     if (isResearchUnlocked(research.id)) return;
     if (window.activeResearch) return;
     if (!arePrerequisitesMet(research)) return;
+    if ((window.researchPoints || 0) < 1) return;
     if (score < research.cost) return;
 
     score -= research.cost;
+    window.researchPoints -= 1;
     const now = Date.now();
     window.activeResearch = {
         id: research.id,
@@ -234,6 +237,7 @@ function renderLaboratoryTree() {
         const unlocked = isResearchUnlocked(research.id);
         const prerequisitesMet = arePrerequisitesMet(research);
         const affordable = score >= research.cost;
+        const hasResearchPoint = (window.researchPoints || 0) >= 1;
         const isResearching = window.activeResearch && window.activeResearch.id === research.id;
 
         let progressPercent = 0;
@@ -249,8 +253,10 @@ function renderLaboratoryTree() {
             node.className = 'research-node researching';
         } else if (unlocked) {
             node.className = 'research-node unlocked';
-        } else if (prerequisitesMet && affordable) {
+        } else if (prerequisitesMet && affordable && hasResearchPoint) {
             node.className = 'research-node available';
+        } else if (prerequisitesMet && affordable) {
+            node.className = 'research-node locked-point';
         } else if (prerequisitesMet) {
             node.className = 'research-node locked-cost';
         } else {
@@ -270,7 +276,7 @@ function renderLaboratoryTree() {
                 ? `⏳ Recherche: ${(remainingMs / 1000).toFixed(1)}s`
                 : unlocked
                     ? '✅ Recherché'
-                    : `Coût: ${formatNumber(research.cost)}`;
+                    : `Coût: ${formatNumber(research.cost)} + 1 point recherche`;
         }
 
         if (progressElement && progressBarElement) {
@@ -283,7 +289,7 @@ function renderLaboratoryTree() {
             }
         }
 
-        if (!unlocked && !isResearching && !window.activeResearch && prerequisitesMet && affordable) {
+        if (!unlocked && !isResearching && !window.activeResearch && prerequisitesMet && affordable && hasResearchPoint) {
             node.onclick = () => buyResearch(research.id);
             node.disabled = false;
         } else {
@@ -304,9 +310,9 @@ function renderLaboratoryTree() {
     const unlockedCount = window.unlockedResearch.length;
     if (window.activeResearch) {
         const activeNode = laboratoryResearchTree.find(node => node.id === window.activeResearch.id);
-        statusElement.textContent = `Recherche en cours: ${activeNode ? activeNode.name : 'Inconnue'}`;
+        statusElement.textContent = `Points recherche: ${window.researchPoints || 0} • En cours: ${activeNode ? activeNode.name : 'Inconnue'}`;
     } else {
-        statusElement.textContent = `Recherches débloquées: ${unlockedCount}/${laboratoryResearchTree.length}`;
+        statusElement.textContent = `Points recherche: ${window.researchPoints || 0} • Recherches: ${unlockedCount}/${laboratoryResearchTree.length}`;
     }
 }
 

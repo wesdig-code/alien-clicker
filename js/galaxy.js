@@ -66,6 +66,7 @@ const galaxyPlanets = [
 window.currentPlanetId = window.currentPlanetId || 'orbita_prime';
 window.visitedPlanets = window.visitedPlanets || ['orbita_prime'];
     window.planetHarvested = window.planetHarvested || { orbita_prime: 0 };
+window.claimedPlanetResearchRewards = window.claimedPlanetResearchRewards || [];
 
 function getPlanetById(planetId) {
     return galaxyPlanets.find(planet => planet.id === planetId);
@@ -104,6 +105,18 @@ function applyPlanetHarvestCap(amount) {
         window.planetHarvested[planetId] = 0;
     }
     window.planetHarvested[planetId] += gained;
+
+    const isDepleted = window.planetHarvested[planetId] >= currentPlanet.harvestCap;
+    const alreadyRewarded = window.claimedPlanetResearchRewards.includes(planetId);
+
+    if (isDepleted && !alreadyRewarded) {
+        window.claimedPlanetResearchRewards.push(planetId);
+        window.researchPoints = (window.researchPoints || 0) + 1;
+
+        if (typeof renderLaboratoryTree === 'function') {
+            renderLaboratoryTree();
+        }
+    }
 
     return gained;
 }
@@ -167,9 +180,18 @@ function initializeGalaxyMap() {
         window.planetHarvested = { orbita_prime: 0 };
     }
 
+    if (!Array.isArray(window.claimedPlanetResearchRewards)) {
+        window.claimedPlanetResearchRewards = [];
+    }
+
     galaxyPlanets.forEach(planet => {
         if (typeof window.planetHarvested[planet.id] !== 'number') {
             window.planetHarvested[planet.id] = 0;
+        }
+
+        if (window.planetHarvested[planet.id] >= planet.harvestCap && !window.claimedPlanetResearchRewards.includes(planet.id)) {
+            window.claimedPlanetResearchRewards.push(planet.id);
+            window.researchPoints = (window.researchPoints || 0) + 1;
         }
     });
 
@@ -224,6 +246,7 @@ function renderGalaxyMap() {
                 <span>Coût voyage: ${formatNumber(planet.travelCost)}</span>
                 <span>Déblocage: ${formatNumber(planet.minTotalEntropy)} Entropie</span>
                 <span>Récolte: ${formatNumber(getPlanetHarvested(planet.id))} / ${formatNumber(planet.harvestCap)}</span>
+                <span>${window.claimedPlanetResearchRewards.includes(planet.id) ? '✅ Point recherche gagné' : '🎓 Récompense: +1 point recherche'}</span>
             </div>
         `;
 

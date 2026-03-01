@@ -1621,6 +1621,11 @@ body.welcome-mode #game {
     opacity: 0.75;
 }
 
+.research-node.locked-point {
+    border-color: #ffb347;
+    opacity: 0.82;
+}
+
 .research-progress {
     width: 100%;
     height: 10px;

@@ -139,6 +139,7 @@ Utilisez ensuite l'URL `External` affichée par BrowserSync sur votre téléphon
 - **🧪 Laboratoire** - Arbre de recherche avec prérequis et bonus permanents
 - **🗺️ Carte Galactique** - Voyage entre planètes avec coûts et multiplicateurs d'Entropie
 - **📊 Récolte Planétaire** - Chaque planète a un maximum d'Entropie récoltable avec barre de progression
+- **🎓 Points de Recherche** - Épuiser une planète donne +1 point à dépenser dans le laboratoire
 - **🎯 Achat en Gros** - Options d'achat x1, x10, x25
 - **💾 Sauvegarde/Chargement** - Export/Import JSON
 - **📱 Interface Responsive** - Design adaptatif
