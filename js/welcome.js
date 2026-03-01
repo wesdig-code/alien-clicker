@@ -110,6 +110,7 @@ function resetGameData() {
 
     window.currentPlanetId = 'orbita_prime';
     window.visitedPlanets = ['orbita_prime'];
+    window.planetHarvested = { orbita_prime: 0 };
     
     // Vider le localStorage
     localStorage.removeItem('alienClickerSave');

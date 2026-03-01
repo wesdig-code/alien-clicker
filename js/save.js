@@ -78,6 +78,12 @@ function applyLoadedGameData(gameData, options = {}) {
         window.visitedPlanets = ['orbita_prime'];
     }
 
+    if (gameData.planetHarvested && typeof gameData.planetHarvested === 'object') {
+        window.planetHarvested = gameData.planetHarvested;
+    } else {
+        window.planetHarvested = { orbita_prime: 0 };
+    }
+
     // Restaurer les fermes
     if (Array.isArray(gameData.farms)) {
         gameData.farms.forEach(savedFarm => {
@@ -153,6 +159,7 @@ function saveGame() {
         activeResearch: window.activeResearch || null,
         currentPlanetId: window.currentPlanetId || 'orbita_prime',
         visitedPlanets: window.visitedPlanets || ['orbita_prime'],
+        planetHarvested: window.planetHarvested || { orbita_prime: 0 },
         farms: farms.map(farm => ({
             id: farm.id,
             count: farm.count,

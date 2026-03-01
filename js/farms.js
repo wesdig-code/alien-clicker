@@ -124,9 +124,15 @@ function updateScorePerSecond() {
 
 function generateAutomaticScore() {
     if (scorePerSecond > 0) {
-        score += scorePerSecond;
-        window.totalScoreEarned += scorePerSecond; // Tracker le score total
-        updateDisplay();
+        const passiveGain = typeof applyPlanetHarvestCap === 'function'
+            ? applyPlanetHarvestCap(scorePerSecond)
+            : scorePerSecond;
+
+        if (passiveGain > 0) {
+            score += passiveGain;
+            window.totalScoreEarned += passiveGain; // Tracker le score total
+            updateDisplay();
+        }
     }
 }
 

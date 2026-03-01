@@ -138,6 +138,7 @@ Utilisez ensuite l'URL `External` affichée par BrowserSync sur votre téléphon
 - **⚡ Système d'Améliorations** - Multiplicateurs de production (×2, ×4, ×8)
 - **🧪 Laboratoire** - Arbre de recherche avec prérequis et bonus permanents
 - **🗺️ Carte Galactique** - Voyage entre planètes avec coûts et multiplicateurs d'Entropie
+- **📊 Récolte Planétaire** - Chaque planète a un maximum d'Entropie récoltable avec barre de progression
 - **🎯 Achat en Gros** - Options d'achat x1, x10, x25
 - **💾 Sauvegarde/Chargement** - Export/Import JSON
 - **📱 Interface Responsive** - Design adaptatif

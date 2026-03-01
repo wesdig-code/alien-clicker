@@ -351,8 +351,11 @@ function applyItemEffect(item) {
     
     switch (item.effect) {
         case 'score':
-            score += value;
-            showFloatingText(`+${formatNumber(value)} points!`, '#FFD700');
+            const adjustedDropGain = typeof applyPlanetHarvestCap === 'function'
+                ? applyPlanetHarvestCap(value)
+                : value;
+            score += adjustedDropGain;
+            showFloatingText(`+${formatNumber(adjustedDropGain)} Entropie!`, '#FFD700');
             break;
             
         case 'clickBoost':

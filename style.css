@@ -1678,6 +1678,29 @@ body.welcome-mode #game {
     font-weight: bold;
 }
 
+.current-planet-harvest-text {
+    margin-top: 8px;
+    color: #d9e2ff;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.current-planet-harvest-progress {
+    margin-top: 6px;
+    height: 10px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.current-planet-harvest-bar {
+    width: 0;
+    height: 100%;
+    background: linear-gradient(90deg, #66ccff, #00ff88);
+    transition: width 0.2s ease;
+}
+
 .galaxy-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

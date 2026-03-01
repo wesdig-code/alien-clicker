@@ -68,9 +68,12 @@ function createAlienClickArea() {
         const basePoints = clickPower;
         const multiplier = typeof getCurrentScoreMultiplier === 'function' ? getCurrentScoreMultiplier() : 1;
         const finalPoints = Math.floor(basePoints * multiplier);
+        const planetAdjustedPoints = typeof applyPlanetHarvestCap === 'function'
+            ? applyPlanetHarvestCap(finalPoints)
+            : finalPoints;
         
-        score += finalPoints;
-        window.totalScoreEarned += finalPoints;
+        score += planetAdjustedPoints;
+        window.totalScoreEarned += planetAdjustedPoints;
         
         // Gérer les drops d'items
         if (typeof handleClickDrop === 'function') {
