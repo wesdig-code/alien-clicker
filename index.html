@@ -189,6 +189,14 @@
     
     <!-- Zone de jeu Phaser (toujours visible) -->
     <div id="game"></div>
+
+    <!-- Panel dédié des compteurs d'entropie -->
+    <div id="entropy-panel" class="entropy-panel hidden">
+        <div class="entropy-panel-title">⚛️ Entropie</div>
+        <div class="entropy-panel-row"><span>Actuelle</span><span id="entropy-current">0</span></div>
+        <div class="entropy-panel-row"><span>Par seconde</span><span id="entropy-per-sec">0</span></div>
+        <div class="entropy-panel-row"><span>Par clic</span><span id="entropy-per-click">1</span></div>
+    </div>
     
     <!-- Zone d'affichage des effets actifs -->
     <div id="active-effects" class="active-effects-container hidden">

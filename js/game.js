@@ -38,7 +38,6 @@ function create() {
     // Créer la zone cliquable HTML au lieu du cercle Phaser
     console.log('👽 Création de la zone alien...');
     createAlienClickArea();
-    initializeCenterStatsPanel();
     initializeCenterHarvestPanel();
 
     // Initialiser les fermes et outils dans l'interface
@@ -63,36 +62,18 @@ function create() {
     console.log('✅ Initialisation terminée !');
 }
 
-function initializeCenterStatsPanel() {
-    const gameDiv = document.getElementById('game');
-    if (!gameDiv) return;
+function updateEntropyPanel() {
+    const panel = document.getElementById('entropy-panel');
+    const currentEntropy = document.getElementById('entropy-current');
+    const entropyPerSec = document.getElementById('entropy-per-sec');
+    const entropyPerClick = document.getElementById('entropy-per-click');
 
-    if (document.getElementById('center-stats-panel')) {
-        return;
-    }
+    if (!panel || !currentEntropy || !entropyPerSec || !entropyPerClick) return;
 
-    const panel = document.createElement('div');
-    panel.id = 'center-stats-panel';
-    panel.className = 'center-stats-panel';
-    panel.innerHTML = `
-        <div class="center-stats-row"><span>Entropie</span><span id="center-entropy-value">0</span></div>
-        <div class="center-stats-row"><span>Entropie/sec</span><span id="center-entropy-sec-value">0</span></div>
-        <div class="center-stats-row"><span>Entropie/clic</span><span id="center-entropy-click-value">1</span></div>
-    `;
-
-    gameDiv.appendChild(panel);
-}
-
-function updateCenterStatsPanel() {
-    const entropyValue = document.getElementById('center-entropy-value');
-    const entropySecValue = document.getElementById('center-entropy-sec-value');
-    const entropyClickValue = document.getElementById('center-entropy-click-value');
-
-    if (!entropyValue || !entropySecValue || !entropyClickValue) return;
-
-    entropyValue.textContent = formatNumber(score);
-    entropySecValue.textContent = formatNumber(scorePerSecond);
-    entropyClickValue.textContent = formatNumber(clickPower);
+    panel.classList.remove('hidden');
+    currentEntropy.textContent = formatNumber(score);
+    entropyPerSec.textContent = formatNumber(scorePerSecond);
+    entropyPerClick.textContent = formatNumber(clickPower);
 }
 
 function initializeCenterHarvestPanel() {
@@ -202,7 +183,7 @@ function updateDisplay() {
         renderGalaxyMap();
     }
 
-    updateCenterStatsPanel();
+    updateEntropyPanel();
     updateCenterHarvestPanel();
 
 }
