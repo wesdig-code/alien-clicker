@@ -110,6 +110,7 @@ function resetGameData() {
     window.activeResearch = null;
 
     window.currentPlanetId = 'orbita_prime';
+    window.currentSystemId = 'core_sector';
     window.visitedPlanets = ['orbita_prime'];
     window.planetHarvested = { orbita_prime: 0 };
     window.claimedPlanetResearchRewards = [];

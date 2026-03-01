@@ -1,72 +1,153 @@
-// Système de carte galactique
+// Système de carte galactique multi-systèmes
 
-const galaxyPlanets = [
+const galaxySystems = [
     {
-        id: 'orbita_prime',
-        name: 'Orbita Prime',
-        emoji: '🪐',
-        biome: 'Nébuleuses calmes',
-        description: 'Planète de départ stable pour collecter l’Entropie.',
-        travelCost: 0,
-        minTotalEntropy: 0,
-        harvestCap: 20000,
-        clickMultiplier: 1,
-        farmMultiplier: 1
+        id: 'core_sector',
+        name: 'Noyau d’Orbita',
+        emoji: '☀️',
+        unlockTotalEntropy: 0,
+        planets: [
+            {
+                id: 'orbita_prime',
+                name: 'Orbita Prime',
+                emoji: '🪐',
+                biome: 'Nébuleuses calmes',
+                description: 'Planète de départ stable pour collecter l’Entropie.',
+                travelCost: 0,
+                minTotalEntropy: 0,
+                harvestCap: 20000,
+                clickMultiplier: 1,
+                farmMultiplier: 1
+            },
+            {
+                id: 'cryo_vii',
+                name: 'Cryo VII',
+                emoji: '🧊',
+                biome: 'Déserts glacés',
+                description: 'Le froid stabilise les fermes mais ralentit le clic.',
+                travelCost: 1500,
+                minTotalEntropy: 5000,
+                harvestCap: 75000,
+                clickMultiplier: 0.95,
+                farmMultiplier: 1.2
+            },
+            {
+                id: 'pyraxis',
+                name: 'Pyraxis',
+                emoji: '🔥',
+                biome: 'Tempêtes de plasma',
+                description: 'Cœur volcanique : clics plus puissants, production instable.',
+                travelCost: 6000,
+                minTotalEntropy: 25000,
+                harvestCap: 220000,
+                clickMultiplier: 1.35,
+                farmMultiplier: 0.9
+            }
+        ]
     },
     {
-        id: 'cryo_vii',
-        name: 'Cryo VII',
-        emoji: '🧊',
-        biome: 'Déserts glacés',
-        description: 'Le froid stabilise les fermes mais ralentit le clic.',
-        travelCost: 1500,
-        minTotalEntropy: 5000,
-        harvestCap: 75000,
-        clickMultiplier: 0.95,
-        farmMultiplier: 1.2
-    },
-    {
-        id: 'pyraxis',
-        name: 'Pyraxis',
-        emoji: '🔥',
-        biome: 'Tempêtes de plasma',
-        description: 'Cœur volcanique : clics plus puissants, production instable.',
-        travelCost: 6000,
-        minTotalEntropy: 25000,
-        harvestCap: 220000,
-        clickMultiplier: 1.35,
-        farmMultiplier: 0.9
-    },
-    {
-        id: 'zenith_ion',
-        name: 'Zenith Ion',
+        id: 'ion_cluster',
+        name: 'Amas Ionique',
         emoji: '⚡',
-        biome: 'Orages ioniques',
-        description: 'Haute tension constante, idéale pour les réseaux automatisés.',
-        travelCost: 18000,
-        minTotalEntropy: 90000,
-        harvestCap: 650000,
-        clickMultiplier: 1.15,
-        farmMultiplier: 1.45
+        unlockTotalEntropy: 90000,
+        planets: [
+            {
+                id: 'zenith_ion',
+                name: 'Zenith Ion',
+                emoji: '⚡',
+                biome: 'Orages ioniques',
+                description: 'Haute tension constante, idéale pour les réseaux automatisés.',
+                travelCost: 18000,
+                minTotalEntropy: 90000,
+                harvestCap: 650000,
+                clickMultiplier: 1.15,
+                farmMultiplier: 1.45
+            },
+            {
+                id: 'aurora_station',
+                name: 'Aurora Station',
+                emoji: '🌠',
+                biome: 'Anneaux magnétiques',
+                description: 'Les champs auroraux boostent les clics précis.',
+                travelCost: 32000,
+                minTotalEntropy: 130000,
+                harvestCap: 920000,
+                clickMultiplier: 1.42,
+                farmMultiplier: 1.2
+            },
+            {
+                id: 'voltra_delta',
+                name: 'Voltra Delta',
+                emoji: '🔋',
+                biome: 'Lacs d’énergie',
+                description: 'Monde énergétique favorisant la production continue.',
+                travelCost: 48000,
+                minTotalEntropy: 190000,
+                harvestCap: 1300000,
+                clickMultiplier: 1.2,
+                farmMultiplier: 1.62
+            }
+        ]
     },
     {
-        id: 'abyss_nova',
-        name: 'Abyss Nova',
+        id: 'abyss_reach',
+        name: 'Confins Abyssaux',
         emoji: '🌌',
-        biome: 'Faille gravitationnelle',
-        description: 'Planète extrême, rendement maximal en Entropie.',
-        travelCost: 45000,
-        minTotalEntropy: 250000,
-        harvestCap: 1800000,
-        clickMultiplier: 1.5,
-        farmMultiplier: 1.6
+        unlockTotalEntropy: 250000,
+        planets: [
+            {
+                id: 'abyss_nova',
+                name: 'Abyss Nova',
+                emoji: '🌌',
+                biome: 'Faille gravitationnelle',
+                description: 'Planète extrême, rendement maximal en Entropie.',
+                travelCost: 45000,
+                minTotalEntropy: 250000,
+                harvestCap: 1800000,
+                clickMultiplier: 1.5,
+                farmMultiplier: 1.6
+            },
+            {
+                id: 'void_cradle',
+                name: 'Void Cradle',
+                emoji: '🕳️',
+                biome: 'Vortex sombres',
+                description: 'Région instable, gains massifs mais techniques.',
+                travelCost: 76000,
+                minTotalEntropy: 320000,
+                harvestCap: 2600000,
+                clickMultiplier: 1.72,
+                farmMultiplier: 1.45
+            },
+            {
+                id: 'chronos_ash',
+                name: 'Chronos Ash',
+                emoji: '⌛',
+                biome: 'Ruines temporelles',
+                description: 'Vestiges hors du temps, extraction de haut niveau.',
+                travelCost: 120000,
+                minTotalEntropy: 420000,
+                harvestCap: 3600000,
+                clickMultiplier: 1.58,
+                farmMultiplier: 1.88
+            }
+        ]
     }
 ];
 
+const galaxyPlanets = galaxySystems.flatMap(system =>
+    system.planets.map(planet => ({ ...planet, systemId: system.id }))
+);
+
 window.currentPlanetId = window.currentPlanetId || 'orbita_prime';
+window.currentSystemId = window.currentSystemId || 'core_sector';
 window.visitedPlanets = window.visitedPlanets || ['orbita_prime'];
-    window.planetHarvested = window.planetHarvested || { orbita_prime: 0 };
+window.planetHarvested = window.planetHarvested || { orbita_prime: 0 };
 window.claimedPlanetResearchRewards = window.claimedPlanetResearchRewards || [];
+
+function getSystemById(systemId) {
+    return galaxySystems.find(system => system.id === systemId);
+}
 
 function getPlanetById(planetId) {
     return galaxyPlanets.find(planet => planet.id === planetId);
@@ -74,6 +155,22 @@ function getPlanetById(planetId) {
 
 function getCurrentPlanet() {
     return getPlanetById(window.currentPlanetId) || galaxyPlanets[0];
+}
+
+function getCurrentSystem() {
+    const system = getSystemById(window.currentSystemId);
+    if (system) return system;
+
+    const currentPlanet = getCurrentPlanet();
+    return getSystemById(currentPlanet.systemId) || galaxySystems[0];
+}
+
+function isSystemUnlocked(system) {
+    return (window.totalScoreEarned || 0) >= system.unlockTotalEntropy;
+}
+
+function isPlanetUnlocked(planet) {
+    return (window.totalScoreEarned || 0) >= planet.minTotalEntropy;
 }
 
 function getPlanetHarvested(planetId) {
@@ -121,14 +218,14 @@ function applyPlanetHarvestCap(amount) {
     return gained;
 }
 
-function isPlanetUnlocked(planet) {
-    return (window.totalScoreEarned || 0) >= planet.minTotalEntropy;
-}
-
 function canTravelToPlanet(planet) {
     if (!planet) return false;
     if (planet.id === window.currentPlanetId) return false;
     if (!isPlanetUnlocked(planet)) return false;
+
+    const system = getSystemById(planet.systemId);
+    if (!system || !isSystemUnlocked(system)) return false;
+
     return score >= planet.travelCost;
 }
 
@@ -139,6 +236,7 @@ function travelToPlanet(planetId) {
 
     score -= planet.travelCost;
     window.currentPlanetId = planet.id;
+    window.currentSystemId = planet.systemId;
 
     if (!window.visitedPlanets.includes(planet.id)) {
         window.visitedPlanets.push(planet.id);
@@ -159,6 +257,14 @@ function travelToPlanet(planetId) {
     renderGalaxyMap();
 }
 
+function setCurrentSystem(systemId) {
+    const system = getSystemById(systemId);
+    if (!system || !isSystemUnlocked(system)) return;
+
+    window.currentSystemId = systemId;
+    renderGalaxyMap();
+}
+
 function getPlanetClickMultiplier() {
     return getCurrentPlanet().clickMultiplier || 1;
 }
@@ -168,8 +274,15 @@ function getPlanetFarmMultiplier() {
 }
 
 function initializeGalaxyMap() {
-    if (!window.currentPlanetId || !getPlanetById(window.currentPlanetId)) {
+    const currentPlanet = getPlanetById(window.currentPlanetId);
+    if (!currentPlanet) {
         window.currentPlanetId = 'orbita_prime';
+    }
+
+    const resolvedCurrentPlanet = getCurrentPlanet();
+
+    if (!window.currentSystemId || !getSystemById(window.currentSystemId)) {
+        window.currentSystemId = resolvedCurrentPlanet.systemId;
     }
 
     if (!Array.isArray(window.visitedPlanets) || window.visitedPlanets.length === 0) {
@@ -204,9 +317,10 @@ function renderGalaxyMap() {
     const currentPlanetBonus = document.getElementById('current-planet-bonus');
     const currentPlanetHarvestText = document.getElementById('current-planet-harvest-text');
     const currentPlanetHarvestBar = document.getElementById('current-planet-harvest-bar');
+    const systemSelect = document.getElementById('galaxy-system-select');
     const galaxyGrid = document.getElementById('galaxy-grid');
 
-    if (!currentPlanetName || !currentPlanetBiome || !currentPlanetBonus || !currentPlanetHarvestText || !currentPlanetHarvestBar || !galaxyGrid) {
+    if (!currentPlanetName || !currentPlanetBiome || !currentPlanetBonus || !currentPlanetHarvestText || !currentPlanetHarvestBar || !systemSelect || !galaxyGrid) {
         return;
     }
 
@@ -214,14 +328,47 @@ function renderGalaxyMap() {
     const currentHarvested = getPlanetHarvested(current.id);
     const currentPercent = Math.min(100, (currentHarvested / current.harvestCap) * 100);
     currentPlanetName.textContent = `${current.emoji} ${current.name}`;
-    currentPlanetBiome.textContent = current.biome;
+    currentPlanetBiome.textContent = `${getSystemById(current.systemId)?.name || ''} • ${current.biome}`;
     currentPlanetBonus.textContent = `Clic x${current.clickMultiplier.toFixed(2)} • Fermes x${current.farmMultiplier.toFixed(2)}`;
     currentPlanetHarvestText.textContent = `Récolte: ${formatNumber(currentHarvested)} / ${formatNumber(current.harvestCap)} Entropie`;
     currentPlanetHarvestBar.style.width = `${currentPercent.toFixed(2)}%`;
 
+    if (systemSelect.options.length !== galaxySystems.length) {
+        systemSelect.innerHTML = '';
+        galaxySystems.forEach(system => {
+            const option = document.createElement('option');
+            option.value = system.id;
+            option.textContent = `${system.emoji} ${system.name}`;
+            systemSelect.appendChild(option);
+        });
+
+        systemSelect.addEventListener('change', event => {
+            setCurrentSystem(event.target.value);
+        });
+    }
+
+    [...systemSelect.options].forEach(option => {
+        const system = getSystemById(option.value);
+        const unlocked = !!system && isSystemUnlocked(system);
+        option.disabled = !unlocked;
+        option.textContent = unlocked
+            ? `${system.emoji} ${system.name}`
+            : `🔒 ${system.emoji} ${system.name} (${formatNumber(system.unlockTotalEntropy)})`;
+    });
+
+    const currentSystem = getCurrentSystem();
+    if (!isSystemUnlocked(currentSystem)) {
+        const fallback = galaxySystems.find(system => isSystemUnlocked(system)) || galaxySystems[0];
+        window.currentSystemId = fallback.id;
+    }
+    systemSelect.value = window.currentSystemId;
+
     galaxyGrid.innerHTML = '';
 
-    galaxyPlanets.forEach(planet => {
+    const visibleSystem = getCurrentSystem();
+    const visiblePlanets = galaxyPlanets.filter(planet => planet.systemId === visibleSystem.id);
+
+    visiblePlanets.forEach(planet => {
         const unlocked = isPlanetUnlocked(planet);
         const isCurrent = planet.id === window.currentPlanetId;
         const canTravel = canTravelToPlanet(planet);
@@ -282,4 +429,5 @@ window.renderGalaxyMap = renderGalaxyMap;
 window.getPlanetClickMultiplier = getPlanetClickMultiplier;
 window.getPlanetFarmMultiplier = getPlanetFarmMultiplier;
 window.applyPlanetHarvestCap = applyPlanetHarvestCap;
+window.galaxySystems = galaxySystems;
 window.galaxyPlanets = galaxyPlanets;

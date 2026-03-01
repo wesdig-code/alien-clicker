@@ -1649,6 +1649,33 @@ body.welcome-mode #game {
     gap: 14px;
 }
 
+.galaxy-system-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: #3a3a5e;
+    border: 1px solid #5a5a8e;
+    border-radius: 10px;
+    padding: 10px 12px;
+}
+
+.galaxy-system-label {
+    color: #dce5ff;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.galaxy-system-select {
+    background: #2a2a46;
+    color: #ffffff;
+    border: 1px solid #6a6a9a;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 13px;
+    min-width: 240px;
+}
+
 .current-planet-panel {
     background: #3a3a5e;
     border: 1px solid #5a5a8e;

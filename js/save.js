@@ -80,6 +80,12 @@ function applyLoadedGameData(gameData, options = {}) {
         window.currentPlanetId = 'orbita_prime';
     }
 
+    if (typeof gameData.currentSystemId === 'string') {
+        window.currentSystemId = gameData.currentSystemId;
+    } else {
+        window.currentSystemId = 'core_sector';
+    }
+
     if (Array.isArray(gameData.visitedPlanets) && gameData.visitedPlanets.length > 0) {
         window.visitedPlanets = gameData.visitedPlanets;
     } else {
@@ -167,6 +173,7 @@ function saveGame() {
         researchPoints: window.researchPoints || 0,
         activeResearch: window.activeResearch || null,
         currentPlanetId: window.currentPlanetId || 'orbita_prime',
+        currentSystemId: window.currentSystemId || 'core_sector',
         visitedPlanets: window.visitedPlanets || ['orbita_prime'],
         planetHarvested: window.planetHarvested || { orbita_prime: 0 },
         claimedPlanetResearchRewards: window.claimedPlanetResearchRewards || [],
