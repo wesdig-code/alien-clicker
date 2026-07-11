@@ -20,7 +20,7 @@ This is **vanilla JS with no bundler and no module system**. Phaser is loaded fr
 Two consequences flow from this:
 
 1. **Script load order in `index.html` is the source of truth.** Each file relies on globals defined by earlier files. The README's load order is slightly stale; trust `index.html` (currently: `data → utils → galaxy → farms → tools → upgrades → laboratory → drops → ui → save → background → wormhole → welcome → game → main`).
-2. **State lives on `window`.** `window.score`, `clickPower`, `scorePerSecond`, `totalScoreEarned`, `stardust`, `galaxyPlanets`, `currentPlanetId`, `collectedItems`, `itemLevels`, `unlockedResearch`, `researchPoints`, `prestigeUpgrades`, etc. Modules read and mutate these directly. The save format in `js/save.js` is essentially a JSON snapshot of this global state — when you add a new piece of persistent state, both `saveGame()` and `applyLoadedGameData()` in `js/save.js` must be updated or saves will silently lose data on round-trip.
+2. **State lives on `window`.** Persisted globals include `window.score`, `clickPower`, `scorePerSecond`, `totalScoreEarned`, `stardust`, `prestigeUpgrades`, `collectedItems`, `itemLevels`, `unlockedResearch`, `researchPoints`, `activeResearch`, `currentPlanetId`, `currentSystemId`, `visitedPlanets`, `planetHarvested`, `claimedPlanetResearchRewards`, plus per-`farms`/`tools` count/level/multiplier/upgrades. (The `galaxySystems` / `galaxyPlanets` map definitions in `galaxy.js` are static — only the player's position and harvest state are saved.) Modules read and mutate these directly. The save format in `js/save.js` is a JSON snapshot of this global state (current `version: "1.3"`) — when you add a new piece of persistent state, both `saveGame()` and `applyLoadedGameData()` in `js/save.js` must be updated or saves will silently lose data on round-trip.
 
 ### Phaser is mostly a click target and a timer
 
@@ -29,9 +29,9 @@ Two consequences flow from this:
 ### Module responsibilities
 
 - `data.js` — base globals + the `farms` / `tools` / upgrade definitions
-- `galaxy.js` — multi-system planet map with `clickMultiplier` / `farmMultiplier` / `harvestCap` per planet (entropy harvested from the current planet caps the planet, exhausting it grants a research point)
+- `galaxy.js` — `galaxySystems` → flattened `galaxyPlanets` map; each planet has `clickMultiplier` / `farmMultiplier` / `harvestCap`, and systems/planets unlock progressively. Entropy harvested from the current planet is capped per planet (`planetHarvested`); exhausting a planet grants a research point (tracked once in `claimedPlanetResearchRewards`). Travel/system helpers: `travelToPlanet`, `setCurrentSystem`, `getCurrentPlanet`.
 - `farms.js` / `tools.js` / `upgrades.js` — passive production, click power, ×2 multiplier upgrades; bulk-buy helper is `calculateBulkCost` in `utils.js`
-- `laboratory.js` — research tree, spends planet research points for permanent bonuses
+- `laboratory.js` — research tree; each node is a **timed** research (one `activeResearch` at a time with `startAt` / `endAt`, duration `LAB_RESEARCH_DURATION_MS`) that completes after real elapsed time and grants a permanent bonus, spending planet research points
 - `wormhole.js` — prestige loop: convert entropy → stardust → permanent upgrades
 - `drops.js` / `background.js` — random drops + decorative emoji background
 - `welcome.js` — welcome screen, intro typing sequence, calls `initGame()`
