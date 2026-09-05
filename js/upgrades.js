@@ -26,60 +26,42 @@ function createUpgradeButton(item, level, type) {
 }
 
 function getUpgradeCost(item, level, type) {
-    const baseCost = type === 'farm' ? item.baseCost : item.baseCost;
-    return baseCost * level * 10; // Coût = coût de base × niveau × 10
+    return item.baseCost * level * 10; // Coût = coût de base × niveau × 10
 }
 
 function buyUpgrade(item, level, type) {
     const upgradeCost = getUpgradeCost(item, level, type);
     const upgradeKey = `level${level}`;
-    
-    console.log(`Tentative d'achat d'amélioration ${type} ${item.name} niveau ${level}`);
-    console.log(`Coût: ${upgradeCost}, Score actuel: ${score}`);
-    console.log(`Déjà acheté: ${item.upgrades[upgradeKey]}`);
-    console.log(`Multiplicateur actuel: ${item.multiplier}`);
-    
-    if (score >= upgradeCost && !item.upgrades[upgradeKey]) {
-        score -= upgradeCost;
-        item.upgrades[upgradeKey] = true;
-        item.multiplier *= 2; // Double la production
-        
-        console.log(`✅ Amélioration achetée! Nouveau multiplicateur: ${item.multiplier}`);
-        
-        if (type === 'farm') {
-            updateScorePerSecond();
-        } else {
-            updateClickPower();
-        }
-        
-        updateDisplay();
-        
-        // Mettre à jour SEULEMENT les boutons d'amélioration sans recréer toute l'interface
-        updateUpgradeButtons(item, type);
-        
-        // Effet visuel
-        const itemDiv = document.getElementById(`${type}-${item.id}`);
-        if (itemDiv) {
-            itemDiv.style.transform = 'scale(1.1)';
-            itemDiv.style.boxShadow = '0 0 20px rgba(255, 102, 0, 0.8)';
-            setTimeout(() => {
-                itemDiv.style.transform = 'scale(1)';
-                itemDiv.style.boxShadow = '';
-            }, 500);
-        }
-        
-        // Déboguer après achat
-        setTimeout(() => {
-            debugMultipliers();
-        }, 200);
+
+    // Achat impossible (score insuffisant ou amélioration déjà possédée) : ne rien faire
+    if (score < upgradeCost || item.upgrades[upgradeKey]) {
+        return;
+    }
+
+    score -= upgradeCost;
+    item.upgrades[upgradeKey] = true;
+    item.multiplier *= 2; // Double la production
+
+    if (type === 'farm') {
+        updateScorePerSecond();
     } else {
-        console.log(`❌ Impossible d'acheter l'amélioration`);
-        if (score < upgradeCost) {
-            console.log(`Pas assez de points (besoin de ${upgradeCost - score} de plus)`);
-        }
-        if (item.upgrades[upgradeKey]) {
-            console.log(`Amélioration déjà achetée`);
-        }
+        updateClickPower();
+    }
+
+    rafraichirAffichage();
+
+    // Mettre à jour SEULEMENT les boutons d'amélioration sans recréer toute l'interface
+    updateUpgradeButtons(item, type);
+
+    // Effet visuel
+    const itemDiv = document.getElementById(`${type}-${item.id}`);
+    if (itemDiv) {
+        itemDiv.style.transform = 'scale(1.1)';
+        itemDiv.style.boxShadow = '0 0 20px rgba(255, 102, 0, 0.8)';
+        setTimeout(() => {
+            itemDiv.style.transform = 'scale(1)';
+            itemDiv.style.boxShadow = '';
+        }, 500);
     }
 }
 
@@ -93,14 +75,10 @@ function updateUpgradeButtons(item, type) {
     
     // Recréer les boutons d'amélioration
     upgradeContainer.innerHTML = '';
-    
-    const upgrade10 = createUpgradeButton(item, 10, type);
-    const upgrade25 = createUpgradeButton(item, 25, type);
-    const upgrade50 = createUpgradeButton(item, 50, type);
-    
-    upgradeContainer.appendChild(upgrade10);
-    upgradeContainer.appendChild(upgrade25);
-    upgradeContainer.appendChild(upgrade50);
+
+    PALIERS_AMELIORATION.forEach(palier => {
+        upgradeContainer.appendChild(createUpgradeButton(item, palier, type));
+    });
 }
 
 // Fonction pour mettre à jour tous les boutons d'amélioration
