@@ -145,28 +145,22 @@ Cette action est irréversible !`;
     console.log(`Prestige effectué ! Gagné ${stardustGain} Stardust`);
 }
 
-// Fonction pour appliquer les bonus de prestige
+// Bonus additif de puissance de clic apporté par l'upgrade de prestige (intégré par updateClickPower)
+function getPrestigeFlatClickBonus() {
+    const clickUpgrade = prestigeUpgrades.find(u => u.id === 'click_boost');
+    return clickUpgrade ? clickUpgrade.level : 0;
+}
+
+// (Re)démarre l'auto-clicker et déclenche les recalculs : ne mute aucune statistique
 function applyPrestigeBonuses() {
-    prestigeUpgrades.forEach(upgrade => {
-        if (upgrade.level > 0) {
-            switch (upgrade.effect) {
-                case 'clickPower':
-                    window.clickPower += upgrade.level;
-                    break;
-                case 'farmMultiplier':
-                    // Sera appliqué dans le calcul de scorePerSecond
-                    break;
-                case 'toolMultiplier':
-                    // Sera appliqué dans le calcul de clickPower
-                    break;
-                case 'autoClick':
-                    if (upgrade.level > 0) {
-                        startAutoClicker();
-                    }
-                    break;
-            }
-        }
-    });
+    startAutoClicker();
+
+    if (typeof updateClickPower === 'function') {
+        updateClickPower();
+    }
+    if (typeof updateScorePerSecond === 'function') {
+        updateScorePerSecond();
+    }
 }
 
 // Fonction pour acheter une amélioration de prestige

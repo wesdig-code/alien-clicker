@@ -78,8 +78,21 @@ function initializeTools() {
         toolDiv.appendChild(buttonsContainer);
         container.appendChild(toolDiv);
         console.log(`✅ [TOOLS] Outil ${tool.name} ajouté au container`);
+// Somme des bonus additifs de puissance de clic fournis par les autres systèmes
+function getFlatClickBonus() {
+    let bonus = 0;
+    if (typeof getPrestigeFlatClickBonus === 'function') bonus += getPrestigeFlatClickBonus();
+    if (typeof getDropFlatClickBonus === 'function') bonus += getDropFlatClickBonus();
+    if (typeof getCollectionFlatClickBonus === 'function') bonus += getCollectionFlatClickBonus();
+    return bonus;
+}
+
+// Seule source de vérité de `clickPower` : toute autre écriture serait écrasée
+// au prochain recalcul (achat d'outil, voyage, recherche...).
     }
-    
+
+    const baseClickPower = 1 + puissanceOutils + getFlatClickBonus();
+
     console.log(`🔧 [TOOLS] ${nextToolIndex + 1} outils ajoutés`);
     updateToolsDisplay();
     console.log('🔧 [TOOLS] initializeTools() terminée');
@@ -98,6 +111,9 @@ function buyTool(tool, quantity = 1) {
         updateClickPower();
         updateDisplay();
         
+
+window.getFlatClickBonus = getFlatClickBonus;
+window.updateClickPower = updateClickPower;
         // Effet visuel
         const toolDiv = document.getElementById(`tool-${tool.id}`);
         toolDiv.style.transform = 'scale(1.1)';
@@ -113,7 +129,7 @@ function buyTool(tool, quantity = 1) {
 }
 
 function updateClickPower() {
-    let baseClickPower = 1 + tools.reduce((total, tool) => {
+    const puissanceOutils = tools.reduce((total, tool) => {
         return total + (tool.basePower * tool.level * tool.multiplier);
     }, 0);
     
@@ -122,11 +138,6 @@ function updateClickPower() {
     const researchMultiplier = typeof getResearchClickMultiplier === 'function' ? getResearchClickMultiplier() : 1;
     const planetMultiplier = typeof getPlanetClickMultiplier === 'function' ? getPlanetClickMultiplier() : 1;
     clickPower = baseClickPower * toolMultiplier * researchMultiplier * planetMultiplier;
-    
-    // Mettre à jour l'affichage immédiatement
-    if (window.clickPowerText) {
-        window.clickPowerText.setText('Points/clic: ' + clickPower);
-    }
 }
 
 function updateToolsDisplay() {

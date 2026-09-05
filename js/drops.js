@@ -354,7 +354,9 @@ function applyItemEffect(item) {
             const adjustedDropGain = typeof applyPlanetHarvestCap === 'function'
                 ? applyPlanetHarvestCap(value)
                 : value;
-            score += adjustedDropGain;
+            if (typeof addScore === 'function') {
+                addScore(adjustedDropGain);
+            }
             showFloatingText(`+${formatNumber(adjustedDropGain)} Entropie!`, '#FFD700');
             break;
             
@@ -363,15 +365,10 @@ function applyItemEffect(item) {
             const existingClickBoost = activeEffects.find(effect => effect.type === 'clickBoost');
             
             if (existingClickBoost) {
-                // Retirer l'ancien bonus
-                clickPower -= existingClickBoost.value;
-                // Appliquer le nouveau bonus
-                clickPower += value;
                 // Remettre le timer au maximum et mettre à jour la valeur
                 existingClickBoost.value = value;
                 existingClickBoost.endTime = Date.now() + item.duration;
                 existingClickBoost.item = item;
-                updateClickPower();
                 showFloatingText(`🔋 Batterie rechargée! +${value}`, item.color);
             } else {
                 // Créer un nouvel effet
@@ -382,9 +379,12 @@ function applyItemEffect(item) {
                     item: item
                 };
                 activeEffects.push(clickBoost);
-                clickPower += value;
                 showFloatingText(`+${value} Click Power!`, item.color);
-                updateClickPower(); // Recalculer le click power
+            }
+
+            // Le bonus est lu par getDropFlatClickBonus() lors du recalcul
+            if (typeof updateClickPower === 'function') {
+                updateClickPower();
             }
             updateActiveEffectsDisplay(); // Mettre à jour l'affichage
             break;
@@ -460,9 +460,10 @@ function applyPermanentItemEffect(item) {
 function applyItemBonusToGame(item, bonusValue) {
     switch (item.bonus) {
         case 'clickPower':
-            // Bonus permanent au click power
-            clickPower += bonusValue;
-            updateClickPower();
+            // Bonus additif lu par getCollectionFlatClickBonus() lors du recalcul
+            if (typeof updateClickPower === 'function') {
+                updateClickPower();
+            }
             break;
             
         case 'farmMultiplier':
@@ -561,8 +562,10 @@ function upgradeItem(itemId) {
 function removeItemBonusFromGame(item, bonusValue) {
     switch (item.bonus) {
         case 'clickPower':
-            clickPower -= bonusValue;
-            updateClickPower();
+            // Rien à retirer : le bonus est recalculé depuis le niveau courant de l'item
+            if (typeof updateClickPower === 'function') {
+                updateClickPower();
+            }
             break;
             
         case 'farmMultiplier':
@@ -619,8 +622,7 @@ function cleanupExpiredEffects() {
     expiredEffects.forEach(effect => {
         switch (effect.type) {
             case 'clickBoost':
-                clickPower -= effect.value;
-                updateClickPower();
+                recalculerClic = true;
                 showFloatingText(`🔋 Batterie épuisée`, '#888888');
                 break;
             case 'scoreMultiplier':
@@ -819,6 +821,72 @@ function initializeDropSystem() {
     setInterval(updateActiveEffectsDisplay, 100);
 
     // Rafraîchir l'affichage de la collection au démarrage/chargement
+// Somme des bonus ADDITIFS temporaires de puissance de clic (batteries actives)
+function getDropFlatClickBonus() {
+    return activeEffects.reduce((total, effect) => {
+        return effect.type === 'clickBoost' ? total + effect.value : total;
+    }, 0);
+}
+
+// Somme des bonus ADDITIFS permanents de puissance de clic apportés par la collection
+function getCollectionFlatClickBonus() {
+    return collectedItems.reduce((total, itemId) => {
+        const item = permanentItems.find(permanentItem => permanentItem.id === itemId);
+        if (!item || item.bonus !== 'clickPower') return total;
+
+        return total + getItemBonus(itemId, itemLevels[itemId] || 1);
+    }, 0);
+}
+
+// Réapplique les multiplicateurs de la collection aux fermes / outils.
+// Précondition : les multiplicateurs viennent d'être remis à 1 (prestige, nouvelle partie).
+// Chaque palier d'amélioration acheté double la production de l'objet
+function getMultiplicateurAmeliorations(item) {
+    const paliersAchetes = Object.values(item.upgrades || {}).filter(Boolean).length;
+    return Math.pow(2, paliersAchetes);
+}
+
+function reapplyCollectionBonuses() {
+    let bonusFermes = 1;
+    let bonusOutils = 1;
+
+    collectedItems.forEach(itemId => {
+        const item = permanentItems.find(permanentItem => permanentItem.id === itemId);
+        if (!item) return;
+
+        const bonus = getItemBonus(itemId, itemLevels[itemId] || 1);
+
+        if (item.bonus === 'farmMultiplier') {
+            bonusFermes *= bonus;
+        } else if (item.bonus === 'toolMultiplier') {
+            bonusOutils *= bonus;
+        }
+    });
+
+    // Le multiplicateur est entièrement dérivable : chaque amélioration achetée le double,
+    // et la collection s'applique par-dessus. On le recalcule au lieu de l'accumuler,
+    // pour que la fonction reste idempotente quel que soit le nombre d'appels.
+    if (typeof farms !== 'undefined') {
+        farms.forEach(farm => {
+            farm.multiplier = getMultiplicateurAmeliorations(farm) * bonusFermes;
+        });
+    }
+
+    if (typeof tools !== 'undefined') {
+        tools.forEach(tool => {
+            tool.multiplier = getMultiplicateurAmeliorations(tool) * bonusOutils;
+        });
+    }
+
+    if (typeof updateScorePerSecond === 'function') {
+        updateScorePerSecond();
+    }
+
+    if (typeof updateClickPower === 'function') {
+        updateClickPower();
+    }
+}
+
     updateCollectionDisplay();
     
     console.log('🎁 Système de drops initialisé');
@@ -837,3 +905,6 @@ window.upgradeItem = upgradeItem;
 window.collectedItems = collectedItems;
 window.itemLevels = itemLevels;
 window.permanentItems = permanentItems;
+window.getDropFlatClickBonus = getDropFlatClickBonus;
+window.getCollectionFlatClickBonus = getCollectionFlatClickBonus;
+window.reapplyCollectionBonuses = reapplyCollectionBonuses;
