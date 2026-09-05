@@ -101,8 +101,6 @@ function launchGameSession() {
 
 // Fonction pour démarrer une nouvelle partie
 function startNewGame() {
-    console.log('Démarrage d\'une nouvelle partie');
-    
     // Réinitialiser toutes les données de jeu
     resetGameData();
 
@@ -146,9 +144,7 @@ function loadGameFromFile() {
             }
 
             launchGameSession();
-            
-            console.log('Partie chargée avec succès !');
-            
+
         } catch (error) {
             console.error('Erreur lors du chargement:', error);
             alert('Erreur lors du chargement du fichier: ' + error.message);
@@ -160,56 +156,21 @@ function loadGameFromFile() {
 
 // Fonction pour réinitialiser les données de jeu
 function resetGameData() {
-    // Réinitialiser toutes les variables globales
-    window.score = 0;
-    window.scorePerSecond = 0;
-    window.clickPower = 1;
-    
-    // Réinitialiser les counts des fermes et outils
-    if (typeof farms !== 'undefined') {
-        farms.forEach(farm => {
-            farm.count = 0;
-            farm.multiplier = 1;
-            if (farm.upgrades) {
-                farm.upgrades = { level10: false, level25: false, level50: false };
-            }
-        });
-    }
-    
-    if (typeof tools !== 'undefined') {
-        tools.forEach(tool => {
-            tool.level = 0;
-            tool.multiplier = 1;
-            if (tool.upgrades) {
-                tool.upgrades = { level10: false, level25: false, level50: false };
-            }
-        });
+    if (typeof resetRunState === 'function') {
+        resetRunState({ keepPrestige: false });
     }
 
-    // Réinitialiser la collection permanente
-    if (Array.isArray(window.collectedItems)) {
-        window.collectedItems.length = 0;
-    }
-    if (window.itemLevels && typeof window.itemLevels === 'object') {
-        Object.keys(window.itemLevels).forEach(key => delete window.itemLevels[key]);
+    // Repartir de l'auto-clicker éventuellement encore actif
+    if (typeof startAutoClicker === 'function') {
+        startAutoClicker();
     }
 
-    if (Array.isArray(window.unlockedResearch)) {
-        window.unlockedResearch.length = 0;
+    // Vider la sauvegarde automatique
+    try {
+        localStorage.removeItem('alienClickerSave');
+    } catch (error) {
+        console.error('Impossible de vider la sauvegarde automatique:', error);
     }
-    window.researchPoints = 0;
-    window.activeResearch = null;
-
-    window.currentPlanetId = 'orbita_prime';
-    window.currentSystemId = 'core_sector';
-    window.visitedPlanets = ['orbita_prime'];
-    window.planetHarvested = { orbita_prime: 0 };
-    window.claimedPlanetResearchRewards = [];
-    
-    // Vider le localStorage
-    localStorage.removeItem('alienClickerSave');
-    
-    console.log('Données de jeu réinitialisées');
 }
 
 // Fonction pour cacher l'écran d'accueil
@@ -238,43 +199,16 @@ function initializeGame() {
     if (typeof initializeUpgradeProperties === 'function') {
         initializeUpgradeProperties();
     }
-    
-    // Initialiser Phaser (qui va créer les objets texte)
+
+    // initGame() est synchrone et initialise tout le runtime (clic, fermes, outils, drops, labo, galaxie)
     if (typeof initGame === 'function') {
         initGame();
     }
-    
-    // Attendre un peu que Phaser soit complètement initialisé
-    setTimeout(() => {
-        // Mettre à jour l'affichage (maintenant que les objets texte existent)
-        if (typeof updateDisplay === 'function') {
-            updateDisplay();
-        }
-        
-        // Redessiner les fermes et outils
-        if (typeof initializeFarms === 'function') {
-            initializeFarms();
-        }
-        
-        if (typeof initializeTools === 'function') {
-            initializeTools();
-        }
-        
-        // Initialiser le système de drops
-        if (typeof initializeDropSystem === 'function') {
-            initializeDropSystem();
-        }
 
-        // Initialiser le laboratoire
-        if (typeof initializeLaboratory === 'function') {
-            initializeLaboratory();
-        }
-
-        // Initialiser la carte galactique
-        if (typeof initializeGalaxyMap === 'function') {
-            initializeGalaxyMap();
-        }
-    }, 150);
+    // Démarrer la sauvegarde automatique une fois la partie lancée
+    if (typeof startAutoSave === 'function') {
+        startAutoSave();
+    }
 }
 
 // Vérifier s'il y a une sauvegarde automatique au démarrage
@@ -282,9 +216,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Ajouter la classe welcome-mode au body au démarrage
     document.body.classList.add('welcome-mode');
     
-    // Si une sauvegarde existe, on peut proposer de la charger automatiquement
-    const autoSave = localStorage.getItem('alienClickerSave');
-    
+    // Si une sauvegarde automatique existe, proposer de reprendre la partie
+    let autoSave = null;
+    try {
+        autoSave = localStorage.getItem('alienClickerSave');
+    } catch (error) {
+        console.error('Sauvegarde automatique inaccessible:', error);
+    }
+
     if (autoSave) {
         // Ajouter un bouton pour continuer la dernière partie
         const welcomeButtons = document.querySelector('.welcome-buttons');
