@@ -96,9 +96,7 @@ function createFloatingEmoji() {
 // Fonction pour démarrer le système d'émojis flottants
 function startFloatingEmojis() {
     if (!backgroundEmojisEnabled) return;
-    
-    console.log('🌌 Démarrage des émojis flottants');
-    
+
     // Créer le premier lot d'émojis
     for (let i = 0; i < 8; i++) {
         setTimeout(() => {
@@ -163,11 +161,9 @@ function toggleBackgroundEmojis() {
     if (backgroundEmojisEnabled) {
         startFloatingEmojis();
         if (statusSpan) statusSpan.textContent = '🌟 Désactiver les émojis';
-        console.log('✅ Émojis flottants activés');
     } else {
         stopFloatingEmojis();
         if (statusSpan) statusSpan.textContent = '🚫 Activer les émojis';
-        console.log('❌ Émojis flottants désactivés');
     }
 }
 

@@ -164,14 +164,14 @@ function buyPrestigeUpgrade(upgradeId) {
     if (!upgrade) return;
     
     if (upgrade.level >= upgrade.maxLevel) {
-        alert('Cette amélioration est déjà au niveau maximum !');
+        showPrestigeNotice('Cette amélioration est déjà au niveau maximum !');
         return;
     }
-    
+
     const cost = getPrestigeUpgradeCost(upgrade);
-    
+
     if (window.stardust < cost) {
-        alert(`Pas assez de Stardust ! Coût: ${cost}, Disponible: ${window.stardust}`);
+        showPrestigeNotice(`Pas assez de Stardust ! Coût: ${cost}, Disponible: ${formatNumber(window.stardust)}`);
         return;
     }
     
@@ -196,8 +196,6 @@ function buyPrestigeUpgrade(upgradeId) {
     if (typeof updateDisplay === 'function') {
         updateDisplay();
     }
-    
-    console.log(`Amélioration ${upgrade.name} achetée ! Niveau: ${upgrade.level}`);
 }
 
 // Fonction pour calculer le coût d'une amélioration de prestige
@@ -274,7 +272,6 @@ function updatePrestigeDisplay() {
                 prestigeButton.textContent = '🌌 Entrer dans le Wormhole';
             }
         }
-        window.autoClickerInterval = null;
     }
 }
 
@@ -282,6 +279,7 @@ function updatePrestigeDisplay() {
 function startAutoClicker() {
     if (window.autoClickerInterval) {
         clearInterval(window.autoClickerInterval);
+        window.autoClickerInterval = null;
     }
 
     const autoClickUpgrade = prestigeUpgrades.find(u => u.id === 'auto_click');
@@ -292,6 +290,8 @@ function startAutoClicker() {
             }
         }, 1000); // 1 fois par seconde
     }
+}
+
 // Notification temporaire (remplace les alert() natifs)
 function showPrestigeNotice(message) {
     const notice = document.createElement('div');
@@ -386,8 +386,6 @@ function showPrestigeConfirm(message, onConfirm) {
     document.body.appendChild(overlay);
 }
 
-}
-
 // Fonction pour l'effet visuel du prestige
 function showPrestigeEffect() {
     // Créer un effet visuel temporaire
@@ -421,12 +419,12 @@ document.addEventListener('DOMContentLoaded', function() {
     startAutoClicker();
 });
 
+// Rendre les fonctions accessibles globalement
+window.calculateStardustGain = calculateStardustGain;
 window.getConvertibleEntropy = getConvertibleEntropy;
 window.getPrestigeFlatClickBonus = getPrestigeFlatClickBonus;
 window.applyPrestigeBonuses = applyPrestigeBonuses;
 window.startAutoClicker = startAutoClicker;
-// Rendre les fonctions accessibles globalement
-window.calculateStardustGain = calculateStardustGain;
 window.performPrestige = performPrestige;
 window.buyPrestigeUpgrade = buyPrestigeUpgrade;
 window.initializePrestigeUpgrades = initializePrestigeUpgrades;

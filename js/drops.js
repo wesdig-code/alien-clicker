@@ -339,10 +339,6 @@ function createDropEffect(item, x, y, isPermanent = false) {
             dropElement.parentNode.removeChild(dropElement);
         }
     }, duration);
-    
-    // Log pour debug
-    const type = isPermanent ? 'PERMANENT' : 'temporaire';
-    console.log(`🎁 Drop ${type}: ${item.name} (${item.rarity})`);
 }
 
 // Appliquer l'effet de l'item dropé
@@ -359,11 +355,11 @@ function applyItemEffect(item) {
             }
             showFloatingText(`+${formatNumber(adjustedDropGain)} Entropie!`, '#FFD700');
             break;
-            
+
         case 'clickBoost':
             // Vérifier s'il y a déjà un effet clickBoost actif
             const existingClickBoost = activeEffects.find(effect => effect.type === 'clickBoost');
-            
+
             if (existingClickBoost) {
                 // Remettre le timer au maximum et mettre à jour la valeur
                 existingClickBoost.value = value;
@@ -452,8 +448,6 @@ function applyPermanentItemEffect(item) {
     
     // Mettre à jour l'affichage général
     updateDisplay();
-    
-    console.log(`🏆 Item permanent collecté: ${item.name} - Niveau 1`);
 }
 
 // Fonction pour appliquer le bonus d'un item au jeu
@@ -553,8 +547,7 @@ function upgradeItem(itemId) {
     // Mettre à jour l'affichage
     updateCollectionDisplay();
     updateDisplay();
-    
-    console.log(`🔼 Item amélioré: ${item.name} niveau ${currentLevel + 1} (${quality.name})`);
+
     return true;
 }
 
@@ -606,14 +599,7 @@ function showFloatingText(text, color) {
     textElement.style.animation = 'floatUp 1.5s ease-out forwards';
     
     document.body.appendChild(textElement);
-
-    if (expiredEffects.length === 0) return;
-
-    // Retirer les effets expirés AVANT de recalculer : le recalcul lit activeEffects
-    activeEffects = activeEffects.filter(effect => effect.endTime > now);
-
-    let recalculerClic = false;
-
+    
     setTimeout(() => {
         if (textElement.parentNode) {
             textElement.parentNode.removeChild(textElement);
@@ -625,7 +611,14 @@ function showFloatingText(text, color) {
 function cleanupExpiredEffects() {
     const now = Date.now();
     const expiredEffects = activeEffects.filter(effect => effect.endTime <= now);
-    
+
+    if (expiredEffects.length === 0) return;
+
+    // Retirer les effets expirés AVANT de recalculer : le recalcul lit activeEffects
+    activeEffects = activeEffects.filter(effect => effect.endTime > now);
+
+    let recalculerClic = false;
+
     expiredEffects.forEach(effect => {
         switch (effect.type) {
             case 'clickBoost':
@@ -639,9 +632,6 @@ function cleanupExpiredEffects() {
     });
 
     if (recalculerClic && typeof updateClickPower === 'function') {
-// Signature du dernier rendu : évite de reconstruire le DOM 10 fois par seconde
-let effectsDisplaySignature = '';
-
         updateClickPower();
     }
 
@@ -649,12 +639,11 @@ let effectsDisplaySignature = '';
     updateActiveEffectsDisplay();
 }
 
+// Signature du dernier rendu : évite de reconstruire le DOM 10 fois par seconde
+let effectsDisplaySignature = '';
+
 // Fonction pour mettre à jour l'affichage des effets actifs
 function updateActiveEffectsDisplay() {
-        if (effectsDisplaySignature === '') return;
-
-        effectsDisplaySignature = '';
-        effectsList.innerHTML = '';
     const container = document.getElementById('active-effects');
     const effectsList = document.getElementById('effects-list');
 
@@ -662,6 +651,10 @@ function updateActiveEffectsDisplay() {
 
     // Si aucun effet actif, cacher le container (une seule fois)
     if (activeEffects.length === 0) {
+        if (effectsDisplaySignature === '') return;
+
+        effectsDisplaySignature = '';
+        effectsList.innerHTML = '';
         container.classList.add('hidden');
         return;
     }
@@ -828,26 +821,6 @@ function toggleCollectionPanel() {
     }
 }
 
-// Fonction pour obtenir le multiplicateur de score actuel
-function getCurrentScoreMultiplier() {
-    let multiplier = 1;
-    activeEffects.forEach(effect => {
-        if (effect.type === 'scoreMultiplier') {
-            multiplier *= effect.value;
-        }
-    });
-    return multiplier;
-}
-
-// Fonction d'initialisation
-function initializeDropSystem() {
-    // Nettoyer les effets expirés toutes les secondes
-    setInterval(cleanupExpiredEffects, 1000);
-    
-    // Mettre à jour l'affichage des effets plus fréquemment pour les timers
-    setInterval(updateActiveEffectsDisplay, 100);
-
-    // Rafraîchir l'affichage de la collection au démarrage/chargement
 // Somme des bonus ADDITIFS temporaires de puissance de clic (batteries actives)
 function getDropFlatClickBonus() {
     return activeEffects.reduce((total, effect) => {
@@ -914,14 +887,35 @@ function reapplyCollectionBonuses() {
     }
 }
 
-    updateCollectionDisplay();
+// Fonction pour obtenir le multiplicateur de score actuel
+function getCurrentScoreMultiplier() {
+    let multiplier = 1;
+    activeEffects.forEach(effect => {
+        if (effect.type === 'scoreMultiplier') {
+            multiplier *= effect.value;
+        }
+    });
+    return multiplier;
+}
+
+// Fonction d'initialisation
+function initializeDropSystem() {
+    // Nettoyer les effets expirés toutes les secondes
+    setInterval(cleanupExpiredEffects, 1000);
     
-    console.log('🎁 Système de drops initialisé');
+    // Mettre à jour l'affichage des effets plus fréquemment pour les timers
+    setInterval(updateActiveEffectsDisplay, 100);
+
+    // Rafraîchir l'affichage de la collection au démarrage/chargement
+    updateCollectionDisplay();
 }
 
 // Rendre les fonctions accessibles globalement
 window.handleClickDrop = handleClickDrop;
 window.getCurrentScoreMultiplier = getCurrentScoreMultiplier;
+window.getDropFlatClickBonus = getDropFlatClickBonus;
+window.getCollectionFlatClickBonus = getCollectionFlatClickBonus;
+window.reapplyCollectionBonuses = reapplyCollectionBonuses;
 window.initializeDropSystem = initializeDropSystem;
 window.updateActiveEffectsDisplay = updateActiveEffectsDisplay;
 window.toggleActiveEffectsDisplay = toggleActiveEffectsDisplay;
@@ -932,6 +926,3 @@ window.upgradeItem = upgradeItem;
 window.collectedItems = collectedItems;
 window.itemLevels = itemLevels;
 window.permanentItems = permanentItems;
-window.getDropFlatClickBonus = getDropFlatClickBonus;
-window.getCollectionFlatClickBonus = getCollectionFlatClickBonus;
-window.reapplyCollectionBonuses = reapplyCollectionBonuses;
