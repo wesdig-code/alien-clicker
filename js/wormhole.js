@@ -279,20 +279,21 @@ function updatePrestigeDisplay() {
                 prestigeButton.textContent = '🌌 Entrer dans le Wormhole';
             }
         }
+        window.autoClickerInterval = null;
     }
 }
 
-// Fonction pour l'auto-clicker
+// Fonction pour l'auto-clicker (idempotente : ne laisse jamais deux intervalles actifs)
 function startAutoClicker() {
     if (window.autoClickerInterval) {
         clearInterval(window.autoClickerInterval);
     }
-    
+
     const autoClickUpgrade = prestigeUpgrades.find(u => u.id === 'auto_click');
-    if (autoClickUpgrade.level > 0) {
+    if (autoClickUpgrade && autoClickUpgrade.level > 0) {
         window.autoClickerInterval = setInterval(() => {
-            if (typeof clickAlien === 'function') {
-                clickAlien();
+            if (typeof triggerAlienClick === 'function') {
+                triggerAlienClick();
             }
         }, 1000); // 1 fois par seconde
     }
@@ -328,10 +329,7 @@ function getToolMultiplier() {
 // Initialiser le système de prestige quand l'onglet est ouvert
 document.addEventListener('DOMContentLoaded', function() {
     // Démarrer l'auto-clicker si débloqué
-    const autoClickUpgrade = prestigeUpgrades.find(u => u.id === 'auto_click');
-    if (autoClickUpgrade.level > 0) {
-        startAutoClicker();
-    }
+    startAutoClicker();
 });
 
 // Rendre les fonctions accessibles globalement
