@@ -61,8 +61,32 @@ window.unlockedResearch = window.unlockedResearch || [];
 window.activeResearch = window.activeResearch || null;
 window.researchPoints = window.researchPoints || 0;
 
-const LAB_RESEARCH_DURATION_MS = 10000;
+const LAB_RESEARCH_MIN_DURATION_MS = 30000;
+const LAB_RESEARCH_MAX_DURATION_MS = 300000;
+const LAB_RESEARCH_MS_PER_ENTROPY = 15;
+
 let laboratoryIntervalId = null;
+let laboratoryLastIdleRenderAt = 0;
+
+// Durée d'une recherche : 15 ms par point d'Entropie de son coût, bornée entre 30 s et 5 min
+function getResearchDurationMs(research) {
+    const duree = (research?.cost || 0) * LAB_RESEARCH_MS_PER_ENTROPY;
+    return Math.min(LAB_RESEARCH_MAX_DURATION_MS, Math.max(LAB_RESEARCH_MIN_DURATION_MS, duree));
+}
+
+// Durée réelle de la recherche en cours : celle enregistrée au lancement, pour qu'une
+// recherche démarrée avant un rechargement se termine avec sa durée d'origine
+function getActiveResearchDurationMs() {
+    const active = window.activeResearch;
+    if (!active) return 0;
+
+    if (typeof active.endAt === 'number' && typeof active.startAt === 'number' && active.endAt > active.startAt) {
+        return active.endAt - active.startAt;
+    }
+
+    const node = laboratoryResearchTree.find(item => item.id === active.id);
+    return node ? getResearchDurationMs(node) : LAB_RESEARCH_MIN_DURATION_MS;
+}
 
 function initializeLaboratory() {
     if (!laboratoryIntervalId) {
@@ -106,7 +130,7 @@ function buyResearch(researchId) {
     window.activeResearch = {
         id: research.id,
         startAt: now,
-        endAt: now + LAB_RESEARCH_DURATION_MS
+        endAt: now + getResearchDurationMs(research)
     };
 
     if (typeof updateDisplay === 'function') {
@@ -134,17 +158,34 @@ function completeResearch(researchId) {
     if (typeof updateDisplay === 'function') {
         updateDisplay();
     }
+
+    renderLaboratoryTree();
+}
+
+// Format court d'une durée de recherche (ex: "1m 15s" ou "42s")
+function formatResearchDuration(ms) {
+    const totalSecondes = Math.max(0, Math.ceil(ms / 1000));
+    const minutes = Math.floor(totalSecondes / 60);
+    const secondes = totalSecondes % 60;
+
+    return minutes > 0 ? `${minutes}m ${secondes.toString().padStart(2, '0')}s` : `${secondes}s`;
 }
 
 function updateLaboratoryState() {
     if (!window.activeResearch) {
-        renderLaboratoryTree();
+        // Hors recherche, seuls le coût et les points évoluent : un rendu par seconde suffit
+        const maintenant = Date.now();
+        if (maintenant - laboratoryLastIdleRenderAt >= 1000) {
+            laboratoryLastIdleRenderAt = maintenant;
+            renderLaboratoryTree();
+        }
         return;
     }
 
     const activeNode = laboratoryResearchTree.find(node => node.id === window.activeResearch.id);
     if (!activeNode || isResearchUnlocked(window.activeResearch.id)) {
         window.activeResearch = null;
+        renderLaboratoryTree();
         return;
     }
 
@@ -244,8 +285,9 @@ function renderLaboratoryTree() {
         let remainingMs = 0;
 
         if (isResearching) {
+            const dureeTotale = getActiveResearchDurationMs() || 1;
             const elapsed = Date.now() - window.activeResearch.startAt;
-            progressPercent = Math.min(100, Math.max(0, (elapsed / LAB_RESEARCH_DURATION_MS) * 100));
+            progressPercent = Math.min(100, Math.max(0, (elapsed / dureeTotale) * 100));
             remainingMs = Math.max(0, window.activeResearch.endAt - Date.now());
         }
 
@@ -273,10 +315,10 @@ function renderLaboratoryTree() {
         if (descElement) descElement.textContent = research.description;
         if (costElement) {
             costElement.textContent = isResearching
-                ? `⏳ Recherche: ${(remainingMs / 1000).toFixed(1)}s`
+                ? `⏳ Recherche: ${formatResearchDuration(remainingMs)}`
                 : unlocked
                     ? '✅ Recherché'
-                    : `Coût: ${formatNumber(research.cost)} + 1 point recherche`;
+                    : `Coût: ${formatNumber(research.cost)} + 1 point recherche • ⏱ ${formatResearchDuration(getResearchDurationMs(research))}`;
         }
 
         if (progressElement && progressBarElement) {
@@ -310,7 +352,8 @@ function renderLaboratoryTree() {
     const unlockedCount = window.unlockedResearch.length;
     if (window.activeResearch) {
         const activeNode = laboratoryResearchTree.find(node => node.id === window.activeResearch.id);
-        statusElement.textContent = `Points recherche: ${window.researchPoints || 0} • En cours: ${activeNode ? activeNode.name : 'Inconnue'}`;
+        const restant = Math.max(0, window.activeResearch.endAt - Date.now());
+        statusElement.textContent = `Points recherche: ${window.researchPoints || 0} • En cours: ${activeNode ? activeNode.name : 'Inconnue'} (${formatResearchDuration(restant)})`;
     } else {
         statusElement.textContent = `Points recherche: ${window.researchPoints || 0} • Recherches: ${unlockedCount}/${laboratoryResearchTree.length}`;
     }
@@ -321,4 +364,6 @@ window.renderLaboratoryTree = renderLaboratoryTree;
 window.getResearchClickMultiplier = getResearchClickMultiplier;
 window.getResearchFarmMultiplier = getResearchFarmMultiplier;
 window.getResearchDropChanceMultiplier = getResearchDropChanceMultiplier;
+window.getResearchDurationMs = getResearchDurationMs;
+window.buyResearch = buyResearch;
 window.laboratoryResearchTree = laboratoryResearchTree;

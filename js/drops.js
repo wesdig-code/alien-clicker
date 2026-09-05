@@ -606,7 +606,14 @@ function showFloatingText(text, color) {
     textElement.style.animation = 'floatUp 1.5s ease-out forwards';
     
     document.body.appendChild(textElement);
-    
+
+    if (expiredEffects.length === 0) return;
+
+    // Retirer les effets expirés AVANT de recalculer : le recalcul lit activeEffects
+    activeEffects = activeEffects.filter(effect => effect.endTime > now);
+
+    let recalculerClic = false;
+
     setTimeout(() => {
         if (textElement.parentNode) {
             textElement.parentNode.removeChild(textElement);
@@ -630,68 +637,88 @@ function cleanupExpiredEffects() {
                 break;
         }
     });
-    
-    // Garder seulement les effets non expirés
-    activeEffects = activeEffects.filter(effect => effect.endTime > now);
-    
+
+    if (recalculerClic && typeof updateClickPower === 'function') {
+// Signature du dernier rendu : évite de reconstruire le DOM 10 fois par seconde
+let effectsDisplaySignature = '';
+
+        updateClickPower();
+    }
+
     // Mettre à jour l'affichage des effets
     updateActiveEffectsDisplay();
 }
 
 // Fonction pour mettre à jour l'affichage des effets actifs
 function updateActiveEffectsDisplay() {
+        if (effectsDisplaySignature === '') return;
+
+        effectsDisplaySignature = '';
+        effectsList.innerHTML = '';
     const container = document.getElementById('active-effects');
     const effectsList = document.getElementById('effects-list');
-    
+
     if (!container || !effectsList) return;
-    
-    // Si aucun effet actif, cacher le container
+
+    // Si aucun effet actif, cacher le container (une seule fois)
     if (activeEffects.length === 0) {
         container.classList.add('hidden');
         return;
     }
-    
+
     // Afficher le container
     container.classList.remove('hidden');
-    
-    // Vider la liste
-    effectsList.innerHTML = '';
-    
+
     const now = Date.now();
-    
-    // Ajouter chaque effet
-    activeEffects.forEach(effect => {
-        const timeLeft = Math.max(0, effect.endTime - now);
-        const secondsLeft = Math.ceil(timeLeft / 1000);
-        
-        const effectElement = document.createElement('div');
-        effectElement.className = `effect-item ${effect.type}`;
-        
-        // Ajouter la classe d'expiration si moins de 3 secondes
-        if (secondsLeft <= 3) {
-            effectElement.classList.add('expiring');
+    const signature = activeEffects
+        .map(effect => `${effect.type}:${effect.value}:${effect.endTime}`)
+        .join('|');
+
+    // Reconstruire les nœuds uniquement quand l'ensemble des effets change
+    if (signature !== effectsDisplaySignature) {
+        effectsDisplaySignature = signature;
+        effectsList.innerHTML = '';
+
+        activeEffects.forEach(effect => {
+            const effectElement = document.createElement('div');
+            effectElement.className = `effect-item ${effect.type}`;
+
+            let description = '';
+            switch (effect.type) {
+                case 'clickBoost':
+                    description = `+${effect.value} Click Power`;
+                    break;
+                case 'scoreMultiplier':
+                    description = `x${effect.value.toFixed(2)} Score`;
+                    break;
+            }
+
+            effectElement.innerHTML = `
+                <div class="effect-icon">${effect.item.emoji}</div>
+                <div class="effect-info">
+                    <div class="effect-name">${effect.item.name}</div>
+                    <div class="effect-description">${description}</div>
+                    <div class="effect-timer"></div>
+                </div>
+            `;
+
+            effectsList.appendChild(effectElement);
+        });
+    }
+
+    // Entre deux changements, seuls les compteurs de temps bougent
+    activeEffects.forEach((effect, index) => {
+        const effectElement = effectsList.children[index];
+        if (!effectElement) return;
+
+        const secondsLeft = Math.ceil(Math.max(0, effect.endTime - now) / 1000);
+        const timerElement = effectElement.querySelector('.effect-timer');
+        if (timerElement) {
+            timerElement.textContent = `${secondsLeft}s`;
         }
-        
-        let description = '';
-        switch (effect.type) {
-            case 'clickBoost':
-                description = `+${effect.value} Click Power`;
-                break;
-            case 'scoreMultiplier':
-                description = `x${effect.value.toFixed(2)} Score`;
-                break;
-        }
-        
-        effectElement.innerHTML = `
-            <div class="effect-icon">${effect.item.emoji}</div>
-            <div class="effect-info">
-                <div class="effect-name">${effect.item.name}</div>
-                <div class="effect-description">${description}</div>
-                <div class="effect-timer">${secondsLeft}s</div>
-            </div>
-        `;
-        
-        effectsList.appendChild(effectElement);
+
+        // Classe d'expiration si moins de 3 secondes
+        effectElement.classList.toggle('expiring', secondsLeft <= 3);
     });
 }
 

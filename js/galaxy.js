@@ -185,6 +185,28 @@ function getPlanetRemainingCapacity(planetId) {
     return Math.max(0, planet.harvestCap - harvested);
 }
 
+function isPlanetDepleted(planetId) {
+    return getPlanetRemainingCapacity(planetId) <= 0;
+}
+
+// Rafraîchit la carte via le point d'entrée de la boucle de rendu quand il existe
+function rafraichirCarteGalactique() {
+    if (typeof refreshGalaxy === 'function') {
+        refreshGalaxy();
+    } else {
+        renderGalaxyMap();
+    }
+}
+
+// Remet toutes les planètes à zéro (prestige / nouvelle partie)
+function resetPlanetHarvest() {
+    window.planetHarvested = {};
+    galaxyPlanets.forEach(planet => {
+        window.planetHarvested[planet.id] = 0;
+    });
+    window.claimedPlanetResearchRewards = [];
+}
+
 function applyPlanetHarvestCap(amount) {
     const safeAmount = Math.max(0, amount || 0);
     if (safeAmount <= 0) return 0;
@@ -213,6 +235,9 @@ function applyPlanetHarvestCap(amount) {
         if (typeof renderLaboratoryTree === 'function') {
             renderLaboratoryTree();
         }
+
+        // Épuisement : événement ponctuel, la carte doit refléter le nouvel état
+        rafraichirCarteGalactique();
     }
 
     return gained;
@@ -254,7 +279,7 @@ function travelToPlanet(planetId) {
         updateDisplay();
     }
 
-    renderGalaxyMap();
+    rafraichirCarteGalactique();
 }
 
 function setCurrentSystem(systemId) {
@@ -262,7 +287,7 @@ function setCurrentSystem(systemId) {
     if (!system || !isSystemUnlocked(system)) return;
 
     window.currentSystemId = systemId;
-    renderGalaxyMap();
+    rafraichirCarteGalactique();
 }
 
 function getPlanetClickMultiplier() {
@@ -330,7 +355,9 @@ function renderGalaxyMap() {
     currentPlanetName.textContent = `${current.emoji} ${current.name}`;
     currentPlanetBiome.textContent = `${getSystemById(current.systemId)?.name || ''} • ${current.biome}`;
     currentPlanetBonus.textContent = `Clic x${current.clickMultiplier.toFixed(2)} • Fermes x${current.farmMultiplier.toFixed(2)}`;
-    currentPlanetHarvestText.textContent = `Récolte: ${formatNumber(currentHarvested)} / ${formatNumber(current.harvestCap)} Entropie`;
+    currentPlanetHarvestText.textContent = isPlanetDepleted(current.id)
+        ? `⛔ Planète épuisée (${formatNumber(current.harvestCap)} Entropie) — voyagez vers une autre planète`
+        : `Récolte: ${formatNumber(currentHarvested)} / ${formatNumber(current.harvestCap)} Entropie`;
     currentPlanetHarvestBar.style.width = `${currentPercent.toFixed(2)}%`;
 
     if (systemSelect.options.length !== galaxySystems.length) {
@@ -372,27 +399,29 @@ function renderGalaxyMap() {
         const unlocked = isPlanetUnlocked(planet);
         const isCurrent = planet.id === window.currentPlanetId;
         const canTravel = canTravelToPlanet(planet);
+        const depleted = isPlanetDepleted(planet.id);
 
         const card = document.createElement('div');
         card.className = 'planet-card';
 
         if (isCurrent) {
             card.classList.add('current');
-        } else if (!unlocked) {
+        } else if (!unlocked || depleted) {
+            // Une planète épuisée ne rapporte plus rien : on la présente comme indisponible
             card.classList.add('locked');
         } else {
             card.classList.add('available');
         }
 
         card.innerHTML = `
-            <div class="planet-title">${planet.emoji} ${planet.name}</div>
+            <div class="planet-title">${planet.emoji} ${planet.name}${depleted ? ' ⛔' : ''}</div>
             <div class="planet-biome">${planet.biome}</div>
             <div class="planet-desc">${planet.description}</div>
             <div class="planet-bonus">Clic x${planet.clickMultiplier.toFixed(2)} • Fermes x${planet.farmMultiplier.toFixed(2)}</div>
             <div class="planet-meta">
                 <span>Coût voyage: ${formatNumber(planet.travelCost)}</span>
                 <span>Déblocage: ${formatNumber(planet.minTotalEntropy)} Entropie</span>
-                <span>Récolte: ${formatNumber(getPlanetHarvested(planet.id))} / ${formatNumber(planet.harvestCap)}</span>
+                <span>${depleted ? `⛔ Épuisée: ${formatNumber(planet.harvestCap)} / ${formatNumber(planet.harvestCap)}` : `Récolte: ${formatNumber(getPlanetHarvested(planet.id))} / ${formatNumber(planet.harvestCap)}`}</span>
                 <span>${window.claimedPlanetResearchRewards.includes(planet.id) ? '✅ Point recherche gagné' : '🎓 Récompense: +1 point recherche'}</span>
             </div>
         `;
@@ -401,9 +430,13 @@ function renderGalaxyMap() {
         actionButton.className = 'planet-travel-button';
 
         if (isCurrent) {
-            actionButton.textContent = '📍 Planète actuelle';
+            actionButton.textContent = depleted ? '⛔ Épuisée — changez de planète' : '📍 Planète actuelle';
             actionButton.disabled = true;
-            actionButton.classList.add('current');
+            actionButton.classList.add(depleted ? 'locked' : 'current');
+        } else if (depleted && unlocked) {
+            actionButton.textContent = '⛔ Planète épuisée';
+            actionButton.disabled = true;
+            actionButton.classList.add('locked');
         } else if (!unlocked) {
             actionButton.textContent = '🔒 Non débloquée';
             actionButton.disabled = true;
@@ -429,5 +462,11 @@ window.renderGalaxyMap = renderGalaxyMap;
 window.getPlanetClickMultiplier = getPlanetClickMultiplier;
 window.getPlanetFarmMultiplier = getPlanetFarmMultiplier;
 window.applyPlanetHarvestCap = applyPlanetHarvestCap;
+window.getPlanetRemainingCapacity = getPlanetRemainingCapacity;
+window.isPlanetDepleted = isPlanetDepleted;
+window.resetPlanetHarvest = resetPlanetHarvest;
+window.travelToPlanet = travelToPlanet;
+window.setCurrentSystem = setCurrentSystem;
+window.getCurrentPlanet = getCurrentPlanet;
 window.galaxySystems = galaxySystems;
 window.galaxyPlanets = galaxyPlanets;
