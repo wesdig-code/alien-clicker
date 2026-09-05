@@ -52,85 +52,72 @@ const prestigeUpgrades = [
     }
 ];
 
-// Fonction pour calculer le Stardust gagné avec le score total
-function calculateStardustGain(totalScore) {
-    if (totalScore < 1000) return 0;
-    
-    // Formule améliorée : racine carrée du score total / 50 (plus généreux)
-    let baseStardust = Math.floor(Math.sqrt(totalScore) / 50);
-    
+// Entropie encore convertible : ce qui a été généré moins ce qui a déjà été converti
+function getConvertibleEntropy() {
+    const totalGenere = window.totalScoreEarned || 0;
+    const totalConverti = window.totalScoreConverted || 0;
+    return Math.max(0, totalGenere - totalConverti);
+}
+
+// Fonction pour calculer le Stardust gagné avec l'entropie encore convertible
+function calculateStardustGain(entropieConvertible) {
+    if (entropieConvertible < 1000) return 0;
+
+    // Formule : racine carrée de l'entropie convertible / 50
+    let baseStardust = Math.floor(Math.sqrt(entropieConvertible) / 50);
+
     // Bonus du multiplicateur de Stardust
     const stardustUpgrade = prestigeUpgrades.find(u => u.id === 'stardust_gain');
     const multiplier = 1 + (stardustUpgrade.level * 0.1);
-    
+
     return Math.floor(baseStardust * multiplier);
 }
 
 // Fonction pour effectuer le prestige
 function performPrestige() {
     const currentScore = window.score || 0;
-    const totalScore = window.totalScoreEarned || 0;
-    const stardustGain = calculateStardustGain(totalScore);
-    
+    const entropieConvertible = getConvertibleEntropy();
+    const stardustGain = calculateStardustGain(entropieConvertible);
+
     if (stardustGain === 0) {
-        alert('Vous devez avoir généré au moins 1000 Entropie au total pour utiliser le Wormhole !');
+        showPrestigeNotice('Vous devez avoir généré au moins 1000 Entropie non encore convertie pour utiliser le Wormhole !');
         return;
     }
-    
-    // Confirmation avec plus de détails
-    const confirmMessage = `Êtes-vous sûr de vouloir traverser le Wormhole ?
-    
-Statistiques actuelles :
+
+    const confirmMessage = `Statistiques actuelles :
 • Entropie actuelle : ${formatNumber(currentScore)}
-• Entropie totale générée : ${formatNumber(totalScore)}
-• Tout sera remis à zéro sauf vos améliorations permanentes
+• Entropie convertible : ${formatNumber(entropieConvertible)}
+• Tout sera remis à zéro sauf vos améliorations permanentes et votre collection
+• Les planètes redeviennent exploitables
 
 Vous allez gagner :
-• ${stardustGain} Stardust (basé sur votre entropie totale)
-    
+• ${stardustGain} Stardust
+
 Cette action est irréversible !`;
-    
-    if (!confirm(confirmMessage)) {
-        return;
+
+    showPrestigeConfirm(confirmMessage, () => {
+        applyPrestige(stardustGain);
+    });
+}
+
+function applyPrestige(stardustGain) {
+    window.stardust = (window.stardust || 0) + stardustGain;
+    // L'entropie convertie est consommée : impossible de reconvertir la même production
+    window.totalScoreConverted = window.totalScoreEarned || 0;
+
+    // Réinitialisation unifiée (conserve stardust, upgrades de prestige et collection)
+    if (typeof resetRunState === 'function') {
+        resetRunState({ keepPrestige: true });
     }
-    
-    // Effectuer le prestige
-    window.stardust += stardustGain;
-    
-    // Réinitialiser le jeu (comme dans welcome.js mais en gardant le stardust)
-    window.score = 0;
-    // NE PAS remettre totalScoreEarned à zéro - c'est un compteur permanent !
-    window.scorePerSecond = 0;
-    window.clickPower = 1;
-    
-    // Réinitialiser les fermes et outils (mais pas les upgrades de prestige)
-    if (typeof farms !== 'undefined') {
-        farms.forEach(farm => {
-            farm.count = 0;
-            farm.multiplier = 1;
-            if (farm.upgrades) {
-                farm.upgrades = { level10: false, level25: false, level50: false };
-            }
-        });
-    }
-    
-    if (typeof tools !== 'undefined') {
-        tools.forEach(tool => {
-            tool.level = 0;
-            tool.multiplier = 1;
-            if (tool.upgrades) {
-                tool.upgrades = { level10: false, level25: false, level50: false };
-            }
-        });
-    }
-    
-    // Appliquer les bonus de prestige
+
+    // Relancer l'auto-clicker et les recalculs
     applyPrestigeBonuses();
-    
-    // Mettre à jour l'affichage
+
     updatePrestigeDisplay();
-    updateDisplay();
-    
+    if (typeof updateDisplay === 'function') {
+        updateDisplay();
+    }
+
     // Réinitialiser les interfaces
     if (typeof initializeFarms === 'function') {
         initializeFarms();
@@ -138,11 +125,19 @@ Cette action est irréversible !`;
     if (typeof initializeTools === 'function') {
         initializeTools();
     }
-    
+    if (typeof refreshShop === 'function') {
+        refreshShop();
+    }
+    if (typeof refreshGalaxy === 'function') {
+        refreshGalaxy();
+    }
+
     // Effet visuel
     showPrestigeEffect();
-    
-    console.log(`Prestige effectué ! Gagné ${stardustGain} Stardust`);
+
+    if (typeof autoSaveGame === 'function') {
+        autoSaveGame();
+    }
 }
 
 // Bonus additif de puissance de clic apporté par l'upgrade de prestige (intégré par updateClickPower)
@@ -262,18 +257,18 @@ function updatePrestigeDisplay() {
     
     if (scorePreview && gainPreview) {
         const currentScore = window.score || 0;
-        const totalScore = window.totalScoreEarned || 0;
-        const potentialGain = calculateStardustGain(totalScore);
-        
-        scorePreview.textContent = `${formatNumber(currentScore)} (Total: ${formatNumber(totalScore)})`;
+        const entropieConvertible = getConvertibleEntropy();
+        const potentialGain = calculateStardustGain(entropieConvertible);
+
+        scorePreview.textContent = `${formatNumber(currentScore)} (Convertible: ${formatNumber(entropieConvertible)})`;
         gainPreview.textContent = potentialGain;
-        
-        // Désactiver le bouton si pas assez de score total
+
+        // Désactiver le bouton si pas assez d'entropie convertible
         const prestigeButton = document.getElementById('prestige-button');
         if (prestigeButton) {
             if (potentialGain === 0) {
                 prestigeButton.disabled = true;
-                prestigeButton.textContent = '🌌 Wormhole (min. 1000 Entropie total)';
+                prestigeButton.textContent = '🌌 Wormhole (min. 1000 Entropie convertible)';
             } else {
                 prestigeButton.disabled = false;
                 prestigeButton.textContent = '🌌 Entrer dans le Wormhole';
@@ -297,6 +292,100 @@ function startAutoClicker() {
             }
         }, 1000); // 1 fois par seconde
     }
+// Notification temporaire (remplace les alert() natifs)
+function showPrestigeNotice(message) {
+    const notice = document.createElement('div');
+    notice.textContent = message;
+    notice.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 10002;
+        max-width: 90vw;
+        color: #ffffff;
+        text-align: center;
+        font-weight: bold;
+        padding: 14px 22px;
+        background: rgba(30, 10, 50, 0.95);
+        border: 1px solid rgba(168, 85, 247, 0.6);
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(124, 58, 237, 0.5);
+    `;
+
+    document.body.appendChild(notice);
+
+    setTimeout(() => {
+        if (notice.parentNode) {
+            notice.parentNode.removeChild(notice);
+        }
+    }, 3500);
+}
+
+// Confirmation modale réutilisant les styles du dialogue de chargement
+function showPrestigeConfirm(message, onConfirm) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 10003;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.75);
+    `;
+
+    const dialog = document.createElement('div');
+    dialog.className = 'load-dialog';
+    dialog.style.cssText = 'margin-top: 0; max-width: 480px; background: rgba(20, 10, 40, 0.98);';
+
+    const title = document.createElement('h3');
+    title.textContent = '🌌 Traverser le Wormhole ?';
+
+    const body = document.createElement('div');
+    body.textContent = message;
+    body.style.cssText = 'color: #ffffff; white-space: pre-line; margin-bottom: 1rem; text-align: left;';
+
+    const actions = document.createElement('div');
+    actions.className = 'load-dialog-buttons';
+
+    const confirmBtn = document.createElement('button');
+    confirmBtn.className = 'load-confirm-btn';
+    confirmBtn.textContent = 'Traverser';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'load-cancel-btn';
+    cancelBtn.textContent = 'Annuler';
+
+    const close = () => {
+        if (overlay.parentNode) {
+            overlay.parentNode.removeChild(overlay);
+        }
+    };
+
+    confirmBtn.onclick = () => {
+        close();
+        onConfirm();
+    };
+    cancelBtn.onclick = close;
+    overlay.onclick = (event) => {
+        if (event.target === overlay) {
+            close();
+        }
+    };
+
+    actions.appendChild(confirmBtn);
+    actions.appendChild(cancelBtn);
+    dialog.appendChild(title);
+    dialog.appendChild(body);
+    dialog.appendChild(actions);
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+}
+
 }
 
 // Fonction pour l'effet visuel du prestige
@@ -332,6 +421,10 @@ document.addEventListener('DOMContentLoaded', function() {
     startAutoClicker();
 });
 
+window.getConvertibleEntropy = getConvertibleEntropy;
+window.getPrestigeFlatClickBonus = getPrestigeFlatClickBonus;
+window.applyPrestigeBonuses = applyPrestigeBonuses;
+window.startAutoClicker = startAutoClicker;
 // Rendre les fonctions accessibles globalement
 window.calculateStardustGain = calculateStardustGain;
 window.performPrestige = performPrestige;
