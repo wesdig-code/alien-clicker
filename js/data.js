@@ -3,10 +3,7 @@
 // Variables globales du jeu
 window.score = 0;
 window.totalScoreEarned = 0; // Score total généré depuis le début (incluant ce qui a été dépensé)
-window.scoreText = null;
-window.alien = null;
 window.scorePerSecond = 0;
-window.scorePerSecondText = null;
 window.clickPower = 1;
 
 // Définition des fermes

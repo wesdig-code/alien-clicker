@@ -1,66 +1,187 @@
-// Logique principale du jeu Phaser et interface
+// Boucle de jeu, zone de clic et rafraîchissement du HUD (rendu DOM, sans moteur externe)
 
-function preload() {
-    // Ajouter des styles CSS pour l'alien via JavaScript
-    const style = document.createElement('style');
-    style.textContent = `
-        canvas {
-            cursor: default;
-        }
-        canvas:hover {
-            cursor: pointer;
-        }
-    `;
-    document.head.appendChild(style);
+const DELTA_TICK_MAX_SECONDES = 60; // borne de sécurité si l'horloge système saute
+const INTERVALLE_TICK_MS = 1000;
+
+let boucleEntropieId = null;
+let dernierTickAt = 0;
+let dernierePlaneteImage = '';
+let derniereEtiquettePlanete = '';
+
+// --- Crédit d'entropie ---------------------------------------------------
+
+function ajouterEntropie(montant) {
+    if (!(montant > 0)) return;
+
+    if (typeof addScore === 'function') {
+        addScore(montant);
+        return;
+    }
+
+    // Filet de sécurité si addScore n'est pas disponible
+    score += montant;
+    window.totalScoreEarned = (window.totalScoreEarned || 0) + montant;
 }
 
-function create() {
-    console.log('🎮 Démarrage de la fonction create()');
-    
-    // Initialiser les propriétés manquantes des objets
-    console.log('🔧 Initialisation des propriétés...');
-    initializeUpgradeProperties();
-    
-    console.log('📊 Création des textes Phaser...');
-    scoreText = this.add.text(20, 20, 'Entropie: 0', { fontSize: '32px', fill: '#fff' });
-    scorePerSecondText = this.add.text(20, 60, 'Entropie/sec: 0', { fontSize: '18px', fill: '#00ff88' });
-    
-    // Ajouter l'affichage des points par clic
-    const clickPowerText = this.add.text(20, 90, 'Entropie/clic: 1', { fontSize: '18px', fill: '#ff8800' });
-    // Rendre accessible globalement
-    window.clickPowerText = clickPowerText;
+function crediterProductionPassive(secondesEcoulees) {
+    if (!(scorePerSecond > 0) || !(secondesEcoulees > 0)) return 0;
 
-    // Les textes HUD sont maintenant affichés dans un panel HTML dédié
-    scoreText.setVisible(false);
-    scorePerSecondText.setVisible(false);
-    clickPowerText.setVisible(false);
-    
-    // Créer la zone cliquable HTML au lieu du cercle Phaser
-    console.log('👽 Création de la zone alien...');
-    createAlienClickArea();
-    initializeCenterHarvestPanel();
+    const gainBrut = scorePerSecond * secondesEcoulees;
+    const gainReel = typeof applyPlanetHarvestCap === 'function'
+        ? applyPlanetHarvestCap(gainBrut)
+        : gainBrut;
 
-    // Initialiser les fermes et outils dans l'interface
-    console.log('🛸 Initialisation des fermes...');
-    setTimeout(() => {
-        initializeFarms();
-    }, 100);
-    
-    console.log('🔧 Initialisation des outils...');
-    setTimeout(() => {
-        initializeTools();
-    }, 200);
-    
-    // Timer pour la production automatique
-    console.log('⏰ Démarrage du timer automatique...');
-    this.time.addEvent({
-        delay: 1000,
-        callback: generateAutomaticScore,
-        loop: true
+    ajouterEntropie(gainReel);
+    return gainReel;
+}
+
+// Conservée pour compatibilité : crédite une seconde de production passive
+function generateAutomaticScore() {
+    const gain = crediterProductionPassive(1);
+    if (gain > 0) {
+        updateDisplay();
+    }
+    return gain;
+}
+
+// --- Boucle de jeu -------------------------------------------------------
+
+function tickBoucleJeu() {
+    const maintenant = Date.now();
+
+    // Les navigateurs throttlent les timers des onglets en arrière-plan :
+    // on crédite le temps réellement écoulé plutôt qu'un tick fixe.
+    const secondesEcoulees = Math.min(
+        DELTA_TICK_MAX_SECONDES,
+        Math.max(0, (maintenant - dernierTickAt) / 1000)
+    );
+
+    dernierTickAt = maintenant;
+    window.lastTickAt = maintenant;
+
+    if (crediterProductionPassive(secondesEcoulees) > 0) {
+        updateDisplay();
+    } else {
+        updateHUD();
+    }
+}
+
+function demarrerBoucleJeu() {
+    if (boucleEntropieId !== null) return;
+
+    dernierTickAt = Date.now();
+    window.lastTickAt = dernierTickAt;
+    boucleEntropieId = setInterval(tickBoucleJeu, INTERVALLE_TICK_MS);
+}
+
+function arreterBoucleJeu() {
+    if (boucleEntropieId === null) return;
+
+    clearInterval(boucleEntropieId);
+    boucleEntropieId = null;
+}
+
+// --- Zone de clic --------------------------------------------------------
+
+function triggerAlienClick(clientX, clientY) {
+    const alienArea = document.getElementById('alien-click-area');
+
+    let x = clientX;
+    let y = clientY;
+    if (typeof x !== 'number' || typeof y !== 'number') {
+        if (alienArea) {
+            const zone = alienArea.getBoundingClientRect();
+            x = zone.left + zone.width / 2;
+            y = zone.top + zone.height / 2;
+        } else {
+            x = window.innerWidth / 2;
+            y = window.innerHeight / 2;
+        }
+    }
+
+    const multiplicateur = typeof getCurrentScoreMultiplier === 'function' ? getCurrentScoreMultiplier() : 1;
+    // Arrondi au minimum à 1 : certaines planètes ont un multiplicateur < 1 qui donnerait 0 par clic
+    const gainBrut = Math.max(1, Math.round(clickPower * multiplicateur));
+    const gainReel = typeof applyPlanetHarvestCap === 'function'
+        ? applyPlanetHarvestCap(gainBrut)
+        : gainBrut;
+
+    ajouterEntropie(gainReel);
+
+    if (typeof handleClickDrop === 'function') {
+        handleClickDrop(x, y);
+    }
+
+    updateDisplay();
+    createClickEffect(x, y, gainReel);
+
+    if (alienArea) {
+        alienArea.style.transform = 'translate(-50%, -50%) scale(0.9)';
+        setTimeout(() => {
+            alienArea.style.transform = 'translate(-50%, -50%) scale(1)';
+        }, 150);
+    }
+
+    return gainReel;
+}
+
+function createAlienClickArea() {
+    const gameDiv = document.getElementById('game');
+    if (!gameDiv || document.getElementById('alien-click-area')) return;
+
+    const alienArea = document.createElement('button');
+    alienArea.type = 'button';
+    alienArea.id = 'alien-click-area';
+    alienArea.className = 'alien-click-area';
+    alienArea.style.padding = '0';
+    alienArea.setAttribute('aria-label', "Récolter de l'entropie");
+
+    alienArea.addEventListener('click', (event) => {
+        // detail === 0 : clic déclenché au clavier (Entrée / Espace), sans coordonnées utilisables
+        const auClavier = event.detail === 0;
+        triggerAlienClick(auClavier ? undefined : event.clientX, auClavier ? undefined : event.clientY);
     });
-    
-    console.log('✅ Initialisation terminée !');
+
+    gameDiv.style.position = 'relative';
+    gameDiv.appendChild(alienArea);
+    updateAlienClickAreaVisual();
 }
+
+function getCurrentPlanetImagePath() {
+    if (Array.isArray(window.galaxyPlanets) && window.galaxyPlanets.length > 0) {
+        const currentPlanetId = window.currentPlanetId || 'orbita_prime';
+        const index = window.galaxyPlanets.findIndex(planet => planet.id === currentPlanetId);
+        const safeIndex = index >= 0 ? index : 0;
+        const imageNumber = String(safeIndex % 10).padStart(2, '0');
+        return `assets/planet${imageNumber}.png`;
+    }
+
+    return 'assets/planet00.png';
+}
+
+function updateAlienClickAreaVisual() {
+    const alienArea = document.getElementById('alien-click-area');
+    if (!alienArea) return;
+
+    // On ne réécrit le style que si la planète a changé, sinon l'image est rechargée à chaque tick
+    const imagePath = getCurrentPlanetImagePath();
+    if (imagePath !== dernierePlaneteImage) {
+        alienArea.style.backgroundImage = `url("${imagePath}")`;
+        dernierePlaneteImage = imagePath;
+    }
+
+    const planete = typeof getCurrentPlanet === 'function' ? getCurrentPlanet() : null;
+    const etiquette = planete
+        ? `Récolter de l'entropie sur ${planete.name}`
+        : "Récolter de l'entropie";
+
+    if (etiquette !== derniereEtiquettePlanete) {
+        alienArea.setAttribute('aria-label', etiquette);
+        derniereEtiquettePlanete = etiquette;
+    }
+}
+
+// --- Panneaux HUD --------------------------------------------------------
 
 function updateEntropyPanel() {
     const panel = document.getElementById('entropy-panel');
@@ -118,94 +239,65 @@ function updateCenterHarvestPanel() {
     barElement.style.width = `${percent.toFixed(2)}%`;
 }
 
-function getCurrentPlanetImagePath() {
-    if (Array.isArray(window.galaxyPlanets) && window.galaxyPlanets.length > 0) {
-        const currentPlanetId = window.currentPlanetId || 'orbita_prime';
-        const index = window.galaxyPlanets.findIndex(planet => planet.id === currentPlanetId);
-        const safeIndex = index >= 0 ? index : 0;
-        const imageNumber = String(safeIndex % 10).padStart(2, '0');
-        return `assets/planet${imageNumber}.png`;
-    }
+// --- Rafraîchissements ---------------------------------------------------
 
-    return 'assets/planet00.png';
-}
-
-function updateAlienClickAreaVisual() {
-    const alienArea = document.getElementById('alien-click-area');
-    if (!alienArea) return;
-
-    const imagePath = getCurrentPlanetImagePath();
-    alienArea.style.backgroundImage = `url("${imagePath}")`;
-}
-
-function createAlienClickArea() {
-    const gameDiv = document.getElementById('game');
-    
-    const alienArea = document.createElement('div');
-    alienArea.id = 'alien-click-area';
-    alienArea.className = 'alien-click-area';
-    
-    alienArea.addEventListener('click', (event) => {
-        // Calculer les points avec le multiplicateur des drops
-        const basePoints = clickPower;
-        const multiplier = typeof getCurrentScoreMultiplier === 'function' ? getCurrentScoreMultiplier() : 1;
-        const finalPoints = Math.floor(basePoints * multiplier);
-        const planetAdjustedPoints = typeof applyPlanetHarvestCap === 'function'
-            ? applyPlanetHarvestCap(finalPoints)
-            : finalPoints;
-        
-        score += planetAdjustedPoints;
-        window.totalScoreEarned += planetAdjustedPoints;
-        
-        // Gérer les drops d'items
-        if (typeof handleClickDrop === 'function') {
-            handleClickDrop(event.clientX, event.clientY);
-        }
-        
-        updateDisplay();
-        createClickEffect(event.clientX, event.clientY);
-        
-        // Animation de clic
-        alienArea.style.transform = 'translate(-50%, -50%) scale(0.9)';
-        setTimeout(() => {
-            alienArea.style.transform = 'translate(-50%, -50%) scale(1)';
-        }, 150);
-    });
-    
-    // Positionner la zone alien au centre du canvas
-    gameDiv.style.position = 'relative';
-    gameDiv.appendChild(alienArea);
-    updateAlienClickAreaVisual();
-}
-
-function update() {
-    // À compléter pour des fonctionnalités avancées
-}
-
-function updateDisplay() {
-    scoreText.setText('Entropie: ' + Math.floor(score));
-    scorePerSecondText.setText('Entropie/sec: ' + scorePerSecond);
-    
-    // Mettre à jour l'affichage des points par clic
-    if (window.clickPowerText) {
-        window.clickPowerText.setText('Entropie/clic: ' + clickPower);
-    }
-    
-    updateFarmsDisplay();
-    updateToolsDisplay(); // Mettre à jour l'affichage des outils aussi
-    updateSaveStats(); // Mettre à jour les statistiques de sauvegarde
-    
-    // Mettre à jour les boutons d'amélioration
-    if (typeof updateAllUpgradeButtons === 'function') {
-        updateAllUpgradeButtons();
-    }
-
-    if (typeof renderGalaxyMap === 'function') {
-        renderGalaxyMap();
-    }
-
+// Rafraîchissement léger : appelable plusieurs fois par seconde
+function updateHUD() {
     updateEntropyPanel();
     updateCenterHarvestPanel();
     updateAlienClickAreaVisual();
 
+    if (typeof updateSaveStats === 'function') {
+        updateSaveStats();
+    }
 }
+
+// Reconstruction complète des boutiques : uniquement après un achat ou un chargement
+function refreshShop() {
+    if (typeof initializeFarms === 'function') {
+        initializeFarms();
+    }
+    if (typeof initializeTools === 'function') {
+        initializeTools();
+    }
+    if (typeof updateAllUpgradeButtons === 'function') {
+        updateAllUpgradeButtons();
+    }
+}
+
+function refreshGalaxy() {
+    if (typeof renderGalaxyMap === 'function') {
+        renderGalaxyMap();
+    }
+    updateAlienClickAreaVisual();
+}
+
+function isGalaxyTabActive() {
+    const galaxyTab = document.getElementById('galaxy-tab');
+    return !!galaxyTab && galaxyTab.classList.contains('active');
+}
+
+function updateDisplay() {
+    updateHUD();
+
+    if (typeof updateFarmsDisplay === 'function') {
+        updateFarmsDisplay();
+    }
+    if (typeof updateToolsDisplay === 'function') {
+        updateToolsDisplay();
+    }
+
+    // La grille galactique est coûteuse à reconstruire : inutile quand l'onglet est masqué
+    if (isGalaxyTabActive()) {
+        refreshGalaxy();
+    }
+}
+
+window.triggerAlienClick = triggerAlienClick;
+window.updateHUD = updateHUD;
+window.refreshShop = refreshShop;
+window.refreshGalaxy = refreshGalaxy;
+window.updateDisplay = updateDisplay;
+window.generateAutomaticScore = generateAutomaticScore;
+window.demarrerBoucleJeu = demarrerBoucleJeu;
+window.arreterBoucleJeu = arreterBoucleJeu;

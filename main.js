@@ -1,29 +1,55 @@
 // Point d'entrée principal du jeu Alien Clicker
-// Ce fichier initialise le jeu et crée l'instance Phaser
+// Initialisation synchrone du runtime, appelée depuis welcome.js
 
-// Variable globale pour l'instance Phaser
-let game = null;
+const LARGEUR_ZONE_JEU = 480;
+const HAUTEUR_ZONE_JEU = 520;
 
-// Configuration Phaser
-const config = {
-    type: Phaser.AUTO,
-    width: 480,
-    height: 520,
-    backgroundColor: '#22223b',
-    parent: 'game',
-    scene: {
-        preload,
-        create,
-        update
-    }
-};
+let jeuInitialise = false;
 
-// Fonction pour initialiser le jeu (appelée depuis welcome.js)
-function initGame() {
-    if (!game) {
-        console.log('Initialisation du jeu Phaser...');
-        game = new Phaser.Game(config);
-    }
+function preparerZoneJeu() {
+    const gameDiv = document.getElementById('game');
+    if (!gameDiv) return;
+
+    // La zone de jeu n'a plus de canvas : on lui donne ses dimensions explicitement
+    gameDiv.style.position = 'relative';
+    gameDiv.style.width = `${LARGEUR_ZONE_JEU}px`;
+    gameDiv.style.height = `${HAUTEUR_ZONE_JEU}px`;
 }
 
-// Le jeu ne démarre plus automatiquement - il faut cliquer sur les boutons d'accueil
+// Initialise tout le runtime du jeu. Idempotente : un second appel ne recrée rien.
+function initGame() {
+    if (jeuInitialise) {
+        updateDisplay();
+        return;
+    }
+    jeuInitialise = true;
+
+    if (typeof initializeUpgradeProperties === 'function') {
+        initializeUpgradeProperties();
+    }
+
+    preparerZoneJeu();
+    createAlienClickArea();
+    initializeCenterHarvestPanel();
+
+    if (typeof initializeFarms === 'function') {
+        initializeFarms();
+    }
+    if (typeof initializeTools === 'function') {
+        initializeTools();
+    }
+    if (typeof initializeDropSystem === 'function') {
+        initializeDropSystem();
+    }
+    if (typeof initializeLaboratory === 'function') {
+        initializeLaboratory();
+    }
+    if (typeof initializeGalaxyMap === 'function') {
+        initializeGalaxyMap();
+    }
+
+    demarrerBoucleJeu();
+    updateDisplay();
+}
+
+window.initGame = initGame;
