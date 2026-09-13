@@ -19,8 +19,8 @@
 
 ## Invariants de gameplay
 
-- Créditer les gains via `addScore()` (`js/utils.js`) pour maintenir `score` et `totalScoreEarned` ensemble. Pour la récolte, appliquer d'abord `applyPlanetHarvestCap()` ; `addScore()` seul ne limite pas le gain à la capacité planétaire.
-- `triggerAlienClick()` (`js/game.js`) est commun au clic manuel, au clavier et à l'auto-clicker du prestige : y conserver les multiplicateurs temporaires, le plafond de récolte et les drops. Il accepte un appel sans coordonnées.
+- Créditer les gains via `addScore()` (`js/utils.js`) pour maintenir `score` et `totalScoreEarned` ensemble. Pour la récolte, appeler d'abord `recordPlanetHarvest()` : les ressources sont illimitées, mais le compteur déclenche un point de recherche unique au seuil `researchThreshold` de chaque planète.
+- `triggerAlienClick()` (`js/game.js`) est commun au clic manuel, au clavier et à l'auto-clicker du prestige : y conserver les multiplicateurs temporaires, le suivi de récolte et les drops. Il accepte un appel sans coordonnées.
 - `updateClickPower()` (`js/tools.js`) recalcule entièrement la puissance : brancher les bonus additifs sur `getFlatClickBonus()`, sinon ils seront écrasés au prochain achat/voyage/recherche.
 - Les getters `getCollection*()` de `js/drops.js` centralisent les multiplicateurs, coûts et délais. `reapplyCollectionBonuses()` recalcule les multiplicateurs fermes/outils depuis les paliers achetés et la collection : ne pas multiplier de nouveau les valeurs chargées.
 - Dans `js/game.js`, `updateHUD()` est léger ; `updateDisplay()` actualise les boutons et les onglets carte/prestige seulement s'ils sont actifs. Garder `refreshShop()` événementiel ; la carte conserve ses nœuds et ne les reconstruit qu'au changement de système, pour préserver le focus.
@@ -32,7 +32,7 @@
 - Tout nouvel état persistant doit être traité dans `serializeGameState()`, `normalizeGameData()`, `applyLoadedGameData()` et `resetRunState({ keepPrestige })` de `js/save.js`. La normalisation valide et complète l'état sans mutation ; ne rien appliquer avant son succès.
 - Avec `keepPrestige: true`, conserver Stardust, améliorations de prestige, collection/niveaux et compteurs `totalScoreEarned`/`totalScoreConverted`. Les recherches (y compris celle en cours), points de recherche et récoltes/récompenses planétaires sont remis à zéro ; les bonus de collection sont réappliqués.
 - Import et reset effacent les effets temporaires et resynchronisent l'horloge du tick. L'import en cours de partie reconstruit les boutiques puis sauvegarde immédiatement.
-- Format actuel `1.4`, avec valeurs par défaut pour les sauvegardes `1.3`. Autosave dans `localStorage['alienClickerSave']` toutes les 15 s et à la fermeture. `lastSeenAt` pilote les gains hors ligne sur les 8 dernières heures au maximum, plafonnés par la planète ; scinder la production à la fin d'une recherche échue.
+- Format actuel `1.4`, avec valeurs par défaut pour les sauvegardes `1.3`. Autosave dans `localStorage['alienClickerSave']` toutes les 15 s et à la fermeture. `lastSeenAt` pilote les gains hors ligne sur les 8 dernières heures au maximum ; scinder la production à la fin d'une recherche échue. Ne pas plafonner `planetHarvested` au seuil de recherche ni stocker `Infinity` dans le JSON.
 - Le prestige convertit seulement `totalScoreEarned - totalScoreConverted` : conserver ce suivi pour éviter de convertir deux fois la même entropie.
 
 ## Conventions du dépôt

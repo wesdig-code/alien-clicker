@@ -230,7 +230,7 @@ test('les gains hors ligne changent de taux à la fin de la recherche', () => {
     assert(game.context.unlockedResearch.includes('quantum_drills'));
 });
 
-test('les gains hors ligne restent plafonnés à huit heures et à la capacité planétaire', () => {
+test('les gains hors ligne restent limités à huit heures, mais dépassent les anciens plafonds planétaires', () => {
     const game = createGame();
     const data = snapshot(game);
     data.currentPlanetId = 'chronos_ash';
@@ -244,11 +244,14 @@ test('les gains hors ligne restent plafonnés à huit heures et à la capacité 
     data.currentSystemId = 'core_sector';
     data.planetHarvested.orbita_prime = 19990;
     game.context.applyLoadedGameData(data, { refreshUI: false });
-    assert.equal(game.context.score, 10);
+    assert.equal(game.context.score, 28800);
     assert.equal(game.context.researchPoints, 1);
-    assert.equal(game.context.planetHarvested.orbita_prime, 20000);
+    assert.equal(game.context.planetHarvested.orbita_prime, 48790);
+    const resumed = snapshot(game);
     game.advance(10000);
-    game.context.applyLoadedGameData(snapshot(game), { refreshUI: false });
+    game.context.applyLoadedGameData(resumed, { refreshUI: false });
+    assert.equal(game.context.score, 28810);
+    assert.equal(game.context.planetHarvested.orbita_prime, 48800);
     assert.equal(game.context.researchPoints, 1);
 });
 
@@ -289,4 +292,69 @@ test('le tick suivant un import ne recrédite pas le temps de la partie précéd
     game.evaluate('tickBoucleJeu()');
     assert.equal(game.context.score, 1);
     assert.equal(game.context.planetHarvested.orbita_prime, 1);
+});
+
+test('chaque planète produit au-delà du seuil et donne un seul point de recherche par prestige', () => {
+    const game = createGame();
+    let expectedPoints = 0;
+    for (const planet of game.context.galaxyPlanets) {
+        game.context.currentPlanetId = planet.id;
+        const amount = planet.researchThreshold + 7;
+        assert.equal(game.context.recordPlanetHarvest(amount), amount);
+        assert.equal(game.context.recordPlanetHarvest(300), 300);
+        assert.equal(game.context.planetHarvested[planet.id], amount + 300);
+        assert.equal(game.context.getPlanetResearchProgress(planet.id), 100);
+        assert.equal(game.context.researchPoints, ++expectedPoints);
+    }
+    game.context.resetRunState({ keepPrestige: true });
+    assert.equal(game.context.researchPoints, 0);
+    game.context.recordPlanetHarvest(20001);
+    assert.equal(game.context.researchPoints, 1);
+    assert.equal(game.context.planetHarvested.orbita_prime, 20001);
+});
+
+test('une ancienne sauvegarde bloquée reprend les clics, auto-clics, fermes et drops', () => {
+    const game = createGame();
+    const data = snapshot(game);
+    data.totalScoreEarned = 20000;
+    data.planetHarvested.orbita_prime = 20000;
+    data.claimedPlanetResearchRewards = ['orbita_prime'];
+    game.context.applyLoadedGameData(data, { refreshUI: false });
+    game.evaluate('Math.random = () => 1; createClickEffect = () => {};');
+    assert.equal(game.evaluate('triggerAlienClick()'), 1);
+    game.evaluate("prestigeUpgrades.find(u => u.id === 'auto_click').level = 1; startAutoClicker();");
+    game.intervals.get(game.context.autoClickerInterval).callback();
+    game.evaluate('farms[0].count = 2; updateScorePerSecond(); crediterProductionPassive(100);');
+    game.evaluate("applyItemEffect({ effect: 'score', value: () => 50000 })");
+    assert.equal(game.context.score, 50202);
+    assert.equal(game.context.totalScoreEarned, 70202);
+    assert.equal(game.context.planetHarvested.orbita_prime, 70202);
+    assert.equal(game.context.researchPoints, 0); // Le point de l'ancienne partie a déjà été attribué.
+});
+
+test("export/import conserve les récoltes supérieures aux anciens plafonds sans stocker d'infini", () => {
+    const game = createGame();
+    for (const planet of game.context.galaxyPlanets) {
+        game.context.currentPlanetId = planet.id;
+        game.context.addScore(game.context.recordPlanetHarvest(planet.researchThreshold * 3));
+    }
+    const exported = snapshot(game);
+    const reloaded = createGame();
+    reloaded.context.applyLoadedGameData(exported, { refreshUI: false });
+    const imported = snapshot(reloaded);
+    assert.deepEqual(imported.planetHarvested, exported.planetHarvested);
+    assert.equal(imported.researchPoints, 9);
+    assert.equal(imported.score, exported.score);
+    for (const value of Object.values(imported.planetHarvested)) assert(Number.isFinite(value));
+    reloaded.evaluate('initializeGalaxyMap(); initializeGalaxyMap();');
+    assert.equal(reloaded.context.researchPoints, 9);
+});
+
+test('une sauvegarde 1.3 au seuil récupère une récompense manquante une seule fois', () => {
+    const game = createGame();
+    game.context.applyLoadedGameData({ version: '1.3', score: 0, planetHarvested: { orbita_prime: 20000 } }, { refreshUI: false });
+    game.evaluate('initializeGalaxyMap(); initializeGalaxyMap();');
+    assert.equal(game.context.researchPoints, 1);
+    assert.equal(game.context.recordPlanetHarvest(1), 1);
+    assert.equal(game.context.researchPoints, 1);
 });

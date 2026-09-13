@@ -27,8 +27,8 @@ function crediterProductionPassive(secondesEcoulees) {
     if (!(scorePerSecond > 0) || !(secondesEcoulees > 0)) return 0;
 
     const gainBrut = scorePerSecond * secondesEcoulees;
-    const gainReel = typeof applyPlanetHarvestCap === 'function'
-        ? applyPlanetHarvestCap(gainBrut)
+    const gainReel = typeof recordPlanetHarvest === 'function'
+        ? recordPlanetHarvest(gainBrut)
         : gainBrut;
 
     ajouterEntropie(gainReel);
@@ -106,8 +106,8 @@ function triggerAlienClick(clientX, clientY) {
     const multiplicateur = typeof getCurrentScoreMultiplier === 'function' ? getCurrentScoreMultiplier() : 1;
     // Arrondi au minimum à 1 : certaines planètes ont un multiplicateur < 1 qui donnerait 0 par clic
     const gainBrut = Math.max(1, Math.round(clickPower * multiplicateur));
-    const gainReel = typeof applyPlanetHarvestCap === 'function'
-        ? applyPlanetHarvestCap(gainBrut)
+    const gainReel = typeof recordPlanetHarvest === 'function'
+        ? recordPlanetHarvest(gainBrut)
         : gainBrut;
 
     ajouterEntropie(gainReel);
@@ -217,7 +217,7 @@ function initializeCenterHarvestPanel() {
         <div class="center-harvest-progress">
             <div id="center-harvest-bar" class="center-harvest-bar"></div>
         </div>
-        <div id="center-harvest-text" class="center-harvest-text">Récolte: 0 / 0 Entropie</div>
+        <div id="center-harvest-text" class="center-harvest-text">Récolte: 0 / ∞ Entropie</div>
     `;
 
     gameDiv.appendChild(panel);
@@ -235,12 +235,12 @@ function updateCenterHarvestPanel() {
     if (!currentPlanet) return;
 
     const harvested = window.planetHarvested?.[currentPlanet.id] || 0;
-    const cap = currentPlanet.harvestCap || 0;
-    const percent = cap > 0 ? Math.min(100, (harvested / cap) * 100) : 0;
+    const percent = getPlanetResearchProgress(currentPlanet.id);
 
     titleElement.textContent = `${currentPlanet.emoji} ${currentPlanet.name}`;
-    textElement.textContent = `Récolte: ${formatNumber(harvested)} / ${formatNumber(cap)} Entropie`;
+    textElement.textContent = `Récolte: ${formatNumber(harvested)} / ∞ Entropie • ${getPlanetResearchStatus(currentPlanet.id)}`;
     barElement.style.width = `${percent.toFixed(2)}%`;
+    barElement.parentElement.title = 'Progression vers le point de recherche ; ressources illimitées';
 }
 
 // --- Rafraîchissements ---------------------------------------------------

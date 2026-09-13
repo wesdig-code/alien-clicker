@@ -37,7 +37,9 @@ Variables globales du jeu (`score`, `clickPower`, `scorePerSecond`, `stardust`�
 `formatNumber()` (K, M, B), `calculateBulkCost()` (achat en gros), `addScore()` (**seul point d'entrée légitime pour un gain d'Entropie** : crédite `score` et `totalScoreEarned`), et les helpers de rendu partagés par les boutiques fermes/outils (`creerLigneBoutique`, `majLigneBoutique`).
 
 ### **galaxy.js** - Carte Galactique
-`galaxySystems` → `galaxyPlanets`, déblocage progressif des systèmes/planètes, voyage (`travelToPlanet`), multiplicateurs de clic/fermes par planète, cap de récolte (`planetHarvested`) et récompense de recherche à l'épuisement.
+`galaxySystems` → `galaxyPlanets`, déblocage progressif des systèmes/planètes, voyage (`travelToPlanet`) et multiplicateurs de clic/fermes par planète. Les ressources sont **illimitées** : clics, fermes, drops et gains hors ligne continuent à produire, même sur une planète auparavant épuisée. Le total récolté (`planetHarvested`) est conservé dans la sauvegarde.
+
+Les anciens plafonds deviennent des seuils de recherche (`researchThreshold`) : atteindre le seuil donne **+1 point de recherche par planète et par prestige**, sans interrompre la récolte ni empêcher d'y revenir. Les compteurs affichent `∞` pour les ressources ; les barres indiquent uniquement la progression vers le point de recherche. Les sauvegardes `1.3`/`1.4` restent compatibles.
 
 ### **farms.js** - Fermes (production passive)
 Achat de fermes, coût/production courants, recalcul de l'Entropie/seconde (`updateScorePerSecond`).
@@ -70,13 +72,13 @@ Navigation entre onglets (`switchTab`), effets visuels de clic, mise à jour des
 
 `normalizeGameData()` valide entièrement le fichier avant de modifier la partie. Un import invalide laisse la partie et l'autosave intactes. Un import accepté remet les champs absents à leur valeur par défaut, recalcule les bonus, reconstruit les boutiques et est sauvegardé immédiatement en cours de partie.
 
-Les gains hors ligne portent sur les huit dernières heures au maximum, dans la limite de la capacité restante de la planète. Une recherche achevée pendant l'absence change le taux de production à sa date de fin : les périodes avant et après sont calculées séparément.
+Les gains hors ligne portent sur les huit dernières heures au maximum, sans plafond de ressources planétaires. Une recherche achevée pendant l'absence change le taux de production à sa date de fin : les périodes avant et après sont calculées séparément.
 
 ### **background.js** - Fond décoratif
 Émojis flottants d'arrière-plan (activables/désactivables).
 
 ### **wormhole.js** - Prestige
-Boucle de prestige : conversion de l'Entropie en **Stardust** et améliorations permanentes. Seule l'entropie non encore convertie compte (`totalScoreEarned - totalScoreConverted`), avec un premier Stardust à **2 500 Entropie convertible**. Traverser un wormhole rend les planètes de nouveau exploitables. Le bouton et les achats de prestige s'actualisent pendant que cet onglet est ouvert.
+Boucle de prestige : conversion de l'Entropie en **Stardust** et améliorations permanentes. Seule l'entropie non encore convertie compte (`totalScoreEarned - totalScoreConverted`), avec un premier Stardust à **2 500 Entropie convertible**. Traverser un wormhole remet les récoltes à zéro et permet de gagner à nouveau les points de recherche planétaires. Le bouton et les achats de prestige s'actualisent pendant que cet onglet est ouvert.
 
 ### **welcome.js** - Écran d'accueil
 Écran d'accueil, séquence d'intro tapée à la machine, puis appel de `initGame()` (le jeu ne démarre pas automatiquement).
@@ -157,8 +159,8 @@ La CI exécute `npm test` sous Node.js 24 avant le déploiement GitHub Pages dep
 - **🧪 Laboratoire** - Arbre de recherche avec prérequis, recherches chronométrées et bonus permanents
 - **🗺️ Carte Galactique** - Voyage entre planètes avec coûts et multiplicateurs d'Entropie
 - **☀️ Systèmes Solaires** - Plusieurs systèmes, chacun avec plusieurs planètes à explorer
-- **📊 Récolte Planétaire** - Chaque planète a un maximum d'Entropie récoltable avec barre de progression
-- **🎓 Points de Recherche** - Épuiser une planète donne +1 point à dépenser dans le laboratoire
+- **📊 Récolte Planétaire** - Ressources illimitées sur chaque planète ; la barre suit l'objectif de recherche
+- **🎓 Points de Recherche** - Atteindre le seuil d'une planète donne +1 point à dépenser dans le laboratoire, une fois par prestige
 - **🌌 Wormhole (Prestige)** - Conversion de l'Entropie en Stardust et améliorations permanentes
 - **🏆 Collection & Drops** - Items permanents obtenus via des drops aléatoires
 - **👽 Écran d'accueil & Intro** - Nouvelle partie / chargement, séquence d'introduction

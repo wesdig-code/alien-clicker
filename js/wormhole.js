@@ -90,7 +90,7 @@ function performPrestige() {
 • Entropie actuelle : ${formatNumber(currentScore)}
 • Entropie convertible : ${formatNumber(entropieConvertible)}
 • Tout sera remis à zéro sauf vos améliorations permanentes et votre collection
-• Les planètes redeviennent exploitables
+• Les récompenses de recherche planétaires redeviennent disponibles
 
 Vous allez gagner :
 • ${stardustGain} Stardust

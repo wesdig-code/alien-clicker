@@ -37,10 +37,10 @@ Rendering is split by cost: `updateHUD()` is cheap; `updateDisplay()` adds buy-b
 ### Module responsibilities
 
 - `data.js` — base globals + the `farms` / `tools` / upgrade definitions
-- `galaxy.js` — `galaxySystems` → flattened `galaxyPlanets` map; each planet has `clickMultiplier` / `farmMultiplier` / `harvestCap`, and systems/planets unlock progressively. Entropy harvested from the current planet is capped per planet (`planetHarvested`); exhausting a planet grants a research point (tracked once in `claimedPlanetResearchRewards`). Travel/system helpers: `travelToPlanet`, `setCurrentSystem`, `getCurrentPlanet`.
+- `galaxy.js` — `galaxySystems` → flattened `galaxyPlanets` map; each planet has `clickMultiplier` / `farmMultiplier` / `researchThreshold`, and systems/planets unlock progressively. Resources are unlimited. Call `recordPlanetHarvest()` before `addScore()` to track production and grant one research point at the threshold (tracked in `claimedPlanetResearchRewards`, reset at prestige). Progress bars track research, not remaining resources. Travel/system helpers: `travelToPlanet`, `setCurrentSystem`, `getCurrentPlanet`.
 - `farms.js` / `tools.js` / `upgrades.js` — passive production, click power, ×2 multiplier upgrades; bulk-buy helper is `calculateBulkCost` in `utils.js`
 - `laboratory.js` — research tree; each node is a **timed** research (one `activeResearch` at a time with `startAt` / `endAt`) that completes after real elapsed time and grants a permanent bonus, spending planet research points; duration derives from the node cost (`getResearchDurationMs`, 30 s–5 min) and survives a reload
-- `wormhole.js` — prestige loop: convert entropy → stardust → permanent upgrades. Only entropy not yet converted counts (`totalScoreEarned - totalScoreConverted`); prestige also resets planet harvest so planets become exploitable again
+- `wormhole.js` — prestige loop: convert entropy → stardust → permanent upgrades. Only entropy not yet converted counts (`totalScoreEarned - totalScoreConverted`); prestige resets planet harvest and makes planetary research rewards available again
 - `drops.js` / `background.js` — random drops + decorative emoji background
 - `welcome.js` — welcome screen, intro typing sequence, calls `initGame()`
 - `save.js` — `serializeGameState()`, JSON file download / upload, `localStorage` autosave, offline progress, and `resetRunState({ keepPrestige })` (the single reset path shared by New Game and prestige)
@@ -51,7 +51,7 @@ Rendering is split by cost: `updateHUD()` is cheap; `updateDisplay()` adds buy-b
 
 - `normalizeGameData()` must validate and fill defaults for the entire save before any state changes. Add new persisted fields there as well as in serialization, loading and reset. Derived production and multipliers are recalculated rather than trusted from JSON.
 - Import/reset clear temporary effects and resynchronize the passive tick. An in-game import also rebuilds shops and immediately autosaves. Preserve the `collectedItems` / `itemLevels` object identities shared with `drops.js`.
-- Offline production covers at most the last eight hours and the current planet's remaining capacity. Split the calculation at an expired research's `endAt`, using the old and new production rates on either side.
+- Offline production covers at most the last eight hours, without a planetary resource cap. Split the calculation at an expired research's `endAt`, using the old and new production rates on either side. Keep harvest totals above research thresholds intact on import; never store `Infinity` in JSON.
 - Collection getters in `drops.js` drive all nine items, including level-based discounts, Stardust, drop chance and auto-click timing. `reapplyCollectionBonuses()` derives farm/tool multipliers from purchased upgrades and collection; do not re-multiply saved multipliers. See `README.md` for the exact bonus scope and caps.
 - The first prestige requires 2,500 unconverted Entropy. Its button and upgrade affordability must stay current while the Wormhole tab is open.
 

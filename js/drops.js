@@ -373,8 +373,8 @@ function applyItemEffect(item) {
     
     switch (item.effect) {
         case 'score':
-            const adjustedDropGain = typeof applyPlanetHarvestCap === 'function'
-                ? applyPlanetHarvestCap(value)
+            const adjustedDropGain = typeof recordPlanetHarvest === 'function'
+                ? recordPlanetHarvest(value)
                 : value;
             if (typeof addScore === 'function') {
                 addScore(adjustedDropGain);

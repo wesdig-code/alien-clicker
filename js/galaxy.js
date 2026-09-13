@@ -15,7 +15,7 @@ const galaxySystems = [
                 description: 'Planète de départ stable pour collecter l’Entropie.',
                 travelCost: 0,
                 minTotalEntropy: 0,
-                harvestCap: 20000,
+                researchThreshold: 20000,
                 clickMultiplier: 1,
                 farmMultiplier: 1
             },
@@ -27,7 +27,7 @@ const galaxySystems = [
                 description: 'Le froid stabilise les fermes mais ralentit le clic.',
                 travelCost: 1500,
                 minTotalEntropy: 5000,
-                harvestCap: 75000,
+                researchThreshold: 75000,
                 clickMultiplier: 0.95,
                 farmMultiplier: 1.2
             },
@@ -39,7 +39,7 @@ const galaxySystems = [
                 description: 'Cœur volcanique : clics plus puissants, production instable.',
                 travelCost: 6000,
                 minTotalEntropy: 25000,
-                harvestCap: 220000,
+                researchThreshold: 220000,
                 clickMultiplier: 1.35,
                 farmMultiplier: 0.9
             }
@@ -59,7 +59,7 @@ const galaxySystems = [
                 description: 'Haute tension constante, idéale pour les réseaux automatisés.',
                 travelCost: 18000,
                 minTotalEntropy: 90000,
-                harvestCap: 650000,
+                researchThreshold: 650000,
                 clickMultiplier: 1.15,
                 farmMultiplier: 1.45
             },
@@ -71,7 +71,7 @@ const galaxySystems = [
                 description: 'Les champs auroraux boostent les clics précis.',
                 travelCost: 32000,
                 minTotalEntropy: 130000,
-                harvestCap: 920000,
+                researchThreshold: 920000,
                 clickMultiplier: 1.42,
                 farmMultiplier: 1.2
             },
@@ -83,7 +83,7 @@ const galaxySystems = [
                 description: 'Monde énergétique favorisant la production continue.',
                 travelCost: 48000,
                 minTotalEntropy: 190000,
-                harvestCap: 1300000,
+                researchThreshold: 1300000,
                 clickMultiplier: 1.2,
                 farmMultiplier: 1.62
             }
@@ -103,7 +103,7 @@ const galaxySystems = [
                 description: 'Planète extrême, rendement maximal en Entropie.',
                 travelCost: 45000,
                 minTotalEntropy: 250000,
-                harvestCap: 1800000,
+                researchThreshold: 1800000,
                 clickMultiplier: 1.5,
                 farmMultiplier: 1.6
             },
@@ -115,7 +115,7 @@ const galaxySystems = [
                 description: 'Région instable, gains massifs mais techniques.',
                 travelCost: 76000,
                 minTotalEntropy: 320000,
-                harvestCap: 2600000,
+                researchThreshold: 2600000,
                 clickMultiplier: 1.72,
                 farmMultiplier: 1.45
             },
@@ -127,7 +127,7 @@ const galaxySystems = [
                 description: 'Vestiges hors du temps, extraction de haut niveau.',
                 travelCost: 120000,
                 minTotalEntropy: 420000,
-                harvestCap: 3600000,
+                researchThreshold: 3600000,
                 clickMultiplier: 1.58,
                 farmMultiplier: 1.88
             }
@@ -177,16 +177,17 @@ function getPlanetHarvested(planetId) {
     return window.planetHarvested?.[planetId] || 0;
 }
 
-function getPlanetRemainingCapacity(planetId) {
+function getPlanetResearchProgress(planetId) {
     const planet = getPlanetById(planetId);
     if (!planet) return 0;
 
-    const harvested = getPlanetHarvested(planetId);
-    return Math.max(0, planet.harvestCap - harvested);
+    return Math.min(100, (getPlanetHarvested(planetId) / planet.researchThreshold) * 100);
 }
 
-function isPlanetDepleted(planetId) {
-    return getPlanetRemainingCapacity(planetId) <= 0;
+function getPlanetResearchStatus(planetId) {
+    return window.claimedPlanetResearchRewards.includes(planetId)
+        ? '✅ Point recherche gagné'
+        : `🎓 +1 point recherche à ${formatNumber(getPlanetById(planetId).researchThreshold)} Entropie`;
 }
 
 // Rafraîchit la carte via le point d'entrée de la boucle de rendu quand il existe
@@ -207,28 +208,21 @@ function resetPlanetHarvest() {
     window.claimedPlanetResearchRewards = [];
 }
 
-function applyPlanetHarvestCap(amount) {
-    const safeAmount = Math.max(0, amount || 0);
-    if (safeAmount <= 0) return 0;
+// La récolte est illimitée ; le seuil sert uniquement à accorder la recherche.
+function recordPlanetHarvest(amount) {
+    if (!Number.isFinite(amount) || amount <= 0) return 0;
 
     const currentPlanet = getCurrentPlanet();
     const planetId = currentPlanet.id;
-    const remaining = getPlanetRemainingCapacity(planetId);
-
-    if (remaining <= 0) {
-        return 0;
-    }
-
-    const gained = Math.min(safeAmount, remaining);
     if (!window.planetHarvested[planetId]) {
         window.planetHarvested[planetId] = 0;
     }
-    window.planetHarvested[planetId] += gained;
+    window.planetHarvested[planetId] += amount;
 
-    const isDepleted = window.planetHarvested[planetId] >= currentPlanet.harvestCap;
+    const thresholdReached = window.planetHarvested[planetId] >= currentPlanet.researchThreshold;
     const alreadyRewarded = window.claimedPlanetResearchRewards.includes(planetId);
 
-    if (isDepleted && !alreadyRewarded) {
+    if (thresholdReached && !alreadyRewarded) {
         window.claimedPlanetResearchRewards.push(planetId);
         window.researchPoints = (window.researchPoints || 0) + 1;
 
@@ -236,11 +230,11 @@ function applyPlanetHarvestCap(amount) {
             renderLaboratoryTree();
         }
 
-        // Épuisement : événement ponctuel, la carte doit refléter le nouvel état
+        // Récompense ponctuelle : la carte doit refléter le nouvel état.
         rafraichirCarteGalactique();
     }
 
-    return gained;
+    return amount;
 }
 
 function canTravelToPlanet(planet) {
@@ -327,7 +321,7 @@ function initializeGalaxyMap() {
             window.planetHarvested[planet.id] = 0;
         }
 
-        if (window.planetHarvested[planet.id] >= planet.harvestCap && !window.claimedPlanetResearchRewards.includes(planet.id)) {
+        if (window.planetHarvested[planet.id] >= planet.researchThreshold && !window.claimedPlanetResearchRewards.includes(planet.id)) {
             window.claimedPlanetResearchRewards.push(planet.id);
             window.researchPoints = (window.researchPoints || 0) + 1;
         }
@@ -351,14 +345,13 @@ function renderGalaxyMap() {
 
     const current = getCurrentPlanet();
     const currentHarvested = getPlanetHarvested(current.id);
-    const currentPercent = Math.min(100, (currentHarvested / current.harvestCap) * 100);
+    const currentPercent = getPlanetResearchProgress(current.id);
     currentPlanetName.textContent = `${current.emoji} ${current.name}`;
     currentPlanetBiome.textContent = `${getSystemById(current.systemId)?.name || ''} • ${current.biome}`;
     currentPlanetBonus.textContent = `Clic x${current.clickMultiplier.toFixed(2)} • Fermes x${current.farmMultiplier.toFixed(2)}`;
-    currentPlanetHarvestText.textContent = isPlanetDepleted(current.id)
-        ? `⛔ Planète épuisée (${formatNumber(current.harvestCap)} Entropie) — voyagez vers une autre planète`
-        : `Récolte: ${formatNumber(currentHarvested)} / ${formatNumber(current.harvestCap)} Entropie`;
+    currentPlanetHarvestText.textContent = `Récolte: ${formatNumber(currentHarvested)} / ∞ Entropie • ${getPlanetResearchStatus(current.id)}`;
     currentPlanetHarvestBar.style.width = `${currentPercent.toFixed(2)}%`;
+    currentPlanetHarvestBar.parentElement.title = 'Progression vers le point de recherche ; ressources illimitées';
 
     if (systemSelect.options.length !== galaxySystems.length) {
         systemSelect.innerHTML = '';
@@ -401,7 +394,6 @@ function renderGalaxyMap() {
         const unlocked = isPlanetUnlocked(planet);
         const isCurrent = planet.id === window.currentPlanetId;
         const canTravel = canTravelToPlanet(planet);
-        const depleted = isPlanetDepleted(planet.id);
 
         let card = galaxyGrid.querySelector(`[data-planet-id="${planet.id}"]`);
         if (!card) {
@@ -430,22 +422,21 @@ function renderGalaxyMap() {
 
         if (isCurrent) {
             card.classList.add('current');
-        } else if (!unlocked || depleted) {
-            // Une planète épuisée ne rapporte plus rien : on la présente comme indisponible
+        } else if (!unlocked) {
             card.classList.add('locked');
         } else {
             card.classList.add('available');
         }
 
         const texts = {
-            '.planet-title': `${planet.emoji} ${planet.name}${depleted ? ' ⛔' : ''}`,
+            '.planet-title': `${planet.emoji} ${planet.name}`,
             '.planet-biome': planet.biome,
             '.planet-desc': planet.description,
             '.planet-bonus': `Clic x${planet.clickMultiplier.toFixed(2)} • Fermes x${planet.farmMultiplier.toFixed(2)}`,
             '.planet-travel-cost': `Coût voyage: ${formatNumber(planet.travelCost)}`,
             '.planet-unlock-cost': `Déblocage: ${formatNumber(planet.minTotalEntropy)} Entropie`,
-            '.planet-harvest': `${depleted ? '⛔ Épuisée' : 'Récolte'}: ${formatNumber(getPlanetHarvested(planet.id))} / ${formatNumber(planet.harvestCap)}`,
-            '.planet-reward': window.claimedPlanetResearchRewards.includes(planet.id) ? '✅ Point recherche gagné' : '🎓 Récompense: +1 point recherche'
+            '.planet-harvest': `Récolte: ${formatNumber(getPlanetHarvested(planet.id))} / ∞ Entropie`,
+            '.planet-reward': getPlanetResearchStatus(planet.id)
         };
         Object.entries(texts).forEach(([selector, text]) => {
             const element = card.querySelector(selector);
@@ -456,13 +447,9 @@ function renderGalaxyMap() {
         actionButton.className = 'planet-travel-button';
 
         if (isCurrent) {
-            actionButton.textContent = depleted ? '⛔ Épuisée — changez de planète' : '📍 Planète actuelle';
+            actionButton.textContent = '📍 Planète actuelle';
             actionButton.disabled = true;
-            actionButton.classList.add(depleted ? 'locked' : 'current');
-        } else if (depleted && unlocked) {
-            actionButton.textContent = '⛔ Planète épuisée';
-            actionButton.disabled = true;
-            actionButton.classList.add('locked');
+            actionButton.classList.add('current');
         } else if (!unlocked) {
             actionButton.textContent = '🔒 Non débloquée';
             actionButton.disabled = true;
@@ -484,9 +471,9 @@ window.initializeGalaxyMap = initializeGalaxyMap;
 window.renderGalaxyMap = renderGalaxyMap;
 window.getPlanetClickMultiplier = getPlanetClickMultiplier;
 window.getPlanetFarmMultiplier = getPlanetFarmMultiplier;
-window.applyPlanetHarvestCap = applyPlanetHarvestCap;
-window.getPlanetRemainingCapacity = getPlanetRemainingCapacity;
-window.isPlanetDepleted = isPlanetDepleted;
+window.recordPlanetHarvest = recordPlanetHarvest;
+window.getPlanetResearchProgress = getPlanetResearchProgress;
+window.getPlanetResearchStatus = getPlanetResearchStatus;
 window.resetPlanetHarvest = resetPlanetHarvest;
 window.travelToPlanet = travelToPlanet;
 window.setCurrentSystem = setCurrentSystem;

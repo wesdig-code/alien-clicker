@@ -53,7 +53,7 @@ function createClickEffect(x, y, gain) {
     effectElement.className = 'click-effect';
     effectElement.textContent = gainAffiche > 0
         ? '+' + formatNumber(gainAffiche)
-        : '⛔ Planète épuisée';
+        : '+0';
     effectElement.style.left = x + 'px';
     effectElement.style.top = y + 'px';
 

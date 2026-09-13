@@ -68,7 +68,7 @@ function resetRunState(options = {}) {
     window.researchPoints = 0;
     window.activeResearch = null;
 
-    // Carte galactique : la récolte redevient possible sur toutes les planètes
+    // Carte galactique : les seuils de recherche peuvent de nouveau être récompensés.
     window.currentPlanetId = 'orbita_prime';
     window.currentSystemId = 'core_sector';
     window.visitedPlanets = ['orbita_prime'];
@@ -197,7 +197,7 @@ function normalizeGameData(data) {
         currentPlanetId: planetId,
         currentSystemId: systemId,
         visitedPlanets: [...new Set([...ids(data.visitedPlanets, galaxyPlanets, 'visitedPlanets'), planetId])],
-        planetHarvested: Object.fromEntries(galaxyPlanets.map(planet => [planet.id, Math.min(harvested[planet.id] || 0, planet.harvestCap)])),
+        planetHarvested: Object.fromEntries(galaxyPlanets.map(planet => [planet.id, harvested[planet.id] || 0])),
         claimedPlanetResearchRewards: ids(data.claimedPlanetResearchRewards, galaxyPlanets, 'claimedPlanetResearchRewards'),
         farms: shopItems(data.farms, farms, 'farms', 'count'),
         tools: shopItems(data.tools, tools, 'tools', 'level')
@@ -263,8 +263,8 @@ function applyOfflineProgress(lastSeenAt) {
         gainBrut = (window.scorePerSecond || 0) * secondesEcoulees;
     }
     if (gainBrut <= 0) return;
-    const gainReel = typeof applyPlanetHarvestCap === 'function'
-        ? applyPlanetHarvestCap(gainBrut)
+    const gainReel = typeof recordPlanetHarvest === 'function'
+        ? recordPlanetHarvest(gainBrut)
         : gainBrut;
 
     if (gainReel <= 0) {
