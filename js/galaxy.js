@@ -369,9 +369,9 @@ function renderGalaxyMap() {
             systemSelect.appendChild(option);
         });
 
-        systemSelect.addEventListener('change', event => {
+        systemSelect.onchange = event => {
             setCurrentSystem(event.target.value);
-        });
+        };
     }
 
     [...systemSelect.options].forEach(option => {
@@ -390,10 +390,12 @@ function renderGalaxyMap() {
     }
     systemSelect.value = window.currentSystemId;
 
-    galaxyGrid.innerHTML = '';
-
     const visibleSystem = getCurrentSystem();
     const visiblePlanets = galaxyPlanets.filter(planet => planet.systemId === visibleSystem.id);
+    if (galaxyGrid.dataset.systemId !== visibleSystem.id) {
+        galaxyGrid.innerHTML = '';
+        galaxyGrid.dataset.systemId = visibleSystem.id;
+    }
 
     visiblePlanets.forEach(planet => {
         const unlocked = isPlanetUnlocked(planet);
@@ -401,7 +403,29 @@ function renderGalaxyMap() {
         const canTravel = canTravelToPlanet(planet);
         const depleted = isPlanetDepleted(planet.id);
 
-        const card = document.createElement('div');
+        let card = galaxyGrid.querySelector(`[data-planet-id="${planet.id}"]`);
+        if (!card) {
+            card = document.createElement('div');
+            card.dataset.planetId = planet.id;
+            card.innerHTML = `
+                <div class="planet-title"></div>
+                <div class="planet-biome"></div>
+                <div class="planet-desc"></div>
+                <div class="planet-bonus"></div>
+                <div class="planet-meta">
+                    <span class="planet-travel-cost"></span>
+                    <span class="planet-unlock-cost"></span>
+                    <span class="planet-harvest"></span>
+                    <span class="planet-reward"></span>
+                </div>
+            `;
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'planet-travel-button';
+            button.addEventListener('click', () => travelToPlanet(planet.id));
+            card.appendChild(button);
+            galaxyGrid.appendChild(card);
+        }
         card.className = 'planet-card';
 
         if (isCurrent) {
@@ -413,20 +437,22 @@ function renderGalaxyMap() {
             card.classList.add('available');
         }
 
-        card.innerHTML = `
-            <div class="planet-title">${planet.emoji} ${planet.name}${depleted ? ' ⛔' : ''}</div>
-            <div class="planet-biome">${planet.biome}</div>
-            <div class="planet-desc">${planet.description}</div>
-            <div class="planet-bonus">Clic x${planet.clickMultiplier.toFixed(2)} • Fermes x${planet.farmMultiplier.toFixed(2)}</div>
-            <div class="planet-meta">
-                <span>Coût voyage: ${formatNumber(planet.travelCost)}</span>
-                <span>Déblocage: ${formatNumber(planet.minTotalEntropy)} Entropie</span>
-                <span>${depleted ? `⛔ Épuisée: ${formatNumber(planet.harvestCap)} / ${formatNumber(planet.harvestCap)}` : `Récolte: ${formatNumber(getPlanetHarvested(planet.id))} / ${formatNumber(planet.harvestCap)}`}</span>
-                <span>${window.claimedPlanetResearchRewards.includes(planet.id) ? '✅ Point recherche gagné' : '🎓 Récompense: +1 point recherche'}</span>
-            </div>
-        `;
+        const texts = {
+            '.planet-title': `${planet.emoji} ${planet.name}${depleted ? ' ⛔' : ''}`,
+            '.planet-biome': planet.biome,
+            '.planet-desc': planet.description,
+            '.planet-bonus': `Clic x${planet.clickMultiplier.toFixed(2)} • Fermes x${planet.farmMultiplier.toFixed(2)}`,
+            '.planet-travel-cost': `Coût voyage: ${formatNumber(planet.travelCost)}`,
+            '.planet-unlock-cost': `Déblocage: ${formatNumber(planet.minTotalEntropy)} Entropie`,
+            '.planet-harvest': `${depleted ? '⛔ Épuisée' : 'Récolte'}: ${formatNumber(getPlanetHarvested(planet.id))} / ${formatNumber(planet.harvestCap)}`,
+            '.planet-reward': window.claimedPlanetResearchRewards.includes(planet.id) ? '✅ Point recherche gagné' : '🎓 Récompense: +1 point recherche'
+        };
+        Object.entries(texts).forEach(([selector, text]) => {
+            const element = card.querySelector(selector);
+            if (element.textContent !== text) element.textContent = text;
+        });
 
-        const actionButton = document.createElement('button');
+        const actionButton = card.querySelector('.planet-travel-button');
         actionButton.className = 'planet-travel-button';
 
         if (isCurrent) {
@@ -445,15 +471,12 @@ function renderGalaxyMap() {
             actionButton.textContent = '🚀 Voyager';
             actionButton.disabled = false;
             actionButton.classList.add('available');
-            actionButton.addEventListener('click', () => travelToPlanet(planet.id));
         } else {
             actionButton.textContent = `❌ ${formatNumber(planet.travelCost)} requis`;
             actionButton.disabled = true;
             actionButton.classList.add('locked');
         }
 
-        card.appendChild(actionButton);
-        galaxyGrid.appendChild(card);
     });
 }
 

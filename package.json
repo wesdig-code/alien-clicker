@@ -4,6 +4,7 @@
   "private": true,
   "description": "Alien Clicker - dev server with live reload",
   "scripts": {
+    "test": "node --test",
     "dev": "browser-sync start --server --files \"index.html,style.css,main.js,js/**/*.js\" --port 3000 --no-open",
     "dev:open": "browser-sync start --server --files \"index.html,style.css,main.js,js/**/*.js\" --port 3000",
     "dev:host": "browser-sync start --server --files \"index.html,style.css,main.js,js/**/*.js\" --port 3000 --host 0.0.0.0 --no-open"

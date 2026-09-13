@@ -52,7 +52,15 @@ Boutons d'amélioration et achat des multiplicateurs (×2) sur fermes et outils.
 Arbre de recherche avec prérequis ; chaque recherche est **chronométrée** (une seule `activeResearch` à la fois, `startAt`/`endAt`) et accorde un bonus permanent, payée en points de recherche. La durée dépend du coût du nœud (15 ms par point d'Entropie, bornée entre 30 s et 5 min) et survit à un rechargement.
 
 ### **drops.js** - Drops & Collection
-Drops aléatoires et gestion de la collection d'items permanents (`collectedItems`, `itemLevels`).
+Drops aléatoires et gestion de la collection d'items permanents (`collectedItems`, `itemLevels`). Les neuf objets appliquent leurs bonus selon leur niveau, conservé au prestige :
+
+- L'Œuf Alien, le Cœur de Cristal et la Clé Dorée améliorent respectivement la puissance de clic, les fermes et les outils.
+- Le Fragment d'Étoile améliore le Stardust du prestige et des drops ; l'Orbe Temporel réduit l'intervalle de l'auto-clicker, s'il est débloqué.
+- La Puce Quantique réduit le coût des améliorations ×2, de collection et de prestige, mais pas l'achat de fermes/outils ni les recherches.
+- L'Éclat Cosmique améliore la chance de drop selon son niveau ; l'Essence du Vide multiplie la production des clics et des fermes.
+- La Pierre d'Infinité multiplie les gains des clics, des fermes, de Stardust et la chance de drop ; elle divise aussi les coûts d'amélioration et l'intervalle de l'auto-clicker par son bonus.
+
+Les bonus sont recalculés depuis la collection, sans cumul au rechargement. La chance de drop est plafonnée à 100 %, les coûts à au moins 10 % du prix de base (minimum 1), et l'intervalle auto-click à 100 ms minimum. Les effets temporaires sont effacés lors d'un import, d'une nouvelle partie ou d'un prestige.
 
 ### **ui.js** - Interface Utilisateur
 Navigation entre onglets (`switchTab`), effets visuels de clic, mise à jour des panneaux de stats.
@@ -60,17 +68,21 @@ Navigation entre onglets (`switchTab`), effets visuels de clic, mise à jour des
 ### **save.js** - Sauvegarde/Chargement
 `serializeGameState()` (instantané de l'état), `saveGame()` (export en fichier JSON), `loadGame()` / `applyLoadedGameData()` (import), et `autoSaveGame()` / `startAutoSave()` (sauvegarde automatique dans `localStorage` toutes les 15 s et à la fermeture). Contient aussi `resetRunState({ keepPrestige })`, réinitialisation unifiée partagée par la nouvelle partie et le prestige. Format en version `1.4` ; les sauvegardes `1.3` restent chargeables.
 
+`normalizeGameData()` valide entièrement le fichier avant de modifier la partie. Un import invalide laisse la partie et l'autosave intactes. Un import accepté remet les champs absents à leur valeur par défaut, recalcule les bonus, reconstruit les boutiques et est sauvegardé immédiatement en cours de partie.
+
+Les gains hors ligne portent sur les huit dernières heures au maximum, dans la limite de la capacité restante de la planète. Une recherche achevée pendant l'absence change le taux de production à sa date de fin : les périodes avant et après sont calculées séparément.
+
 ### **background.js** - Fond décoratif
 Émojis flottants d'arrière-plan (activables/désactivables).
 
 ### **wormhole.js** - Prestige
-Boucle de prestige : conversion de l'Entropie en **Stardust** et améliorations permanentes. Seule l'entropie non encore convertie compte (`totalScoreEarned - totalScoreConverted`), et traverser un wormhole rend les planètes de nouveau exploitables.
+Boucle de prestige : conversion de l'Entropie en **Stardust** et améliorations permanentes. Seule l'entropie non encore convertie compte (`totalScoreEarned - totalScoreConverted`), avec un premier Stardust à **2 500 Entropie convertible**. Traverser un wormhole rend les planètes de nouveau exploitables. Le bouton et les achats de prestige s'actualisent pendant que cet onglet est ouvert.
 
 ### **welcome.js** - Écran d'accueil
 Écran d'accueil, séquence d'intro tapée à la machine, puis appel de `initGame()` (le jeu ne démarre pas automatiquement).
 
 ### **game.js** - Zone de clic et boucle de jeu
-Zone de clic (`createAlienClickArea`, `triggerAlienClick`), boucle de production passive basée sur le temps réellement écoulé (résistante au throttling des onglets en arrière-plan), et les trois niveaux de rafraîchissement : `updateHUD()` (léger, à chaque tick), `updateDisplay()` (HUD + accessibilité des boutons + carte si son onglet est actif), `refreshShop()` / `refreshGalaxy()` (reconstruction, uniquement sur événement). Le HUD est en HTML.
+Zone de clic (`createAlienClickArea`, `triggerAlienClick`), boucle de production passive basée sur le temps réellement écoulé (résistante au throttling des onglets en arrière-plan), et les niveaux de rafraîchissement : `updateHUD()` (léger, à chaque tick), `updateDisplay()` (HUD + état des boutons + carte/prestige si leur onglet est actif), `refreshShop()` (reconstruction sur événement). `refreshGalaxy()` actualise les cartes existantes et ne les reconstruit qu'au changement de système, pour conserver le focus clavier. Le HUD est en HTML.
 
 ### **main.js** - Point d'entrée
 `initGame()`, synchrone et idempotente : initialise tout le runtime (zone de clic, fermes, outils, drops, laboratoire, carte, boucle).
@@ -121,6 +133,21 @@ npm run dev:host
 ```
 
 Utilisez ensuite l'URL `External` affichée par BrowserSync sur votre téléphone.
+
+Sur petit écran, le jeu, les effets, les boutiques et la collection s'empilent dans une page défilante. Sur écran intermédiaire, la collection passe sous le jeu pour ne pas le recouvrir.
+
+## Vérification
+
+```bash
+npm test
+npm test -- --test-name-pattern="import"
+```
+
+Les tests utilisent le runner natif de Node.js, sans dépendance supplémentaire. Ils chargent les scripts dans l'ordre de `index.html` et vérifient les bonus, les resets, les imports et la progression hors ligne ; le rendu est neutralisé dans ces tests.
+
+Pour une modification d'interface, compléter avec une partie dans le navigateur : clic et clavier, achats, voyage, export JSON, rechargement puis « Continuer », import valide/invalide et prestige selon la mécanique touchée. Vérifier aussi une petite largeur avec la collection ouverte.
+
+La CI exécute `npm test` sous Node.js 24 avant le déploiement GitHub Pages depuis `master`. Les tests ne nécessitent pas `npm install` ; le site reste déployé directement depuis la racine, sans build.
 
 ## 🎮 Fonctionnalités
 

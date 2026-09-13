@@ -69,9 +69,13 @@ function tickBoucleJeu() {
 function demarrerBoucleJeu() {
     if (boucleEntropieId !== null) return;
 
+    synchroniserHorlogeJeu();
+    boucleEntropieId = setInterval(tickBoucleJeu, INTERVALLE_TICK_MS);
+}
+
+function synchroniserHorlogeJeu() {
     dernierTickAt = Date.now();
     window.lastTickAt = dernierTickAt;
-    boucleEntropieId = setInterval(tickBoucleJeu, INTERVALLE_TICK_MS);
 }
 
 function arreterBoucleJeu() {
@@ -287,7 +291,13 @@ function updateDisplay() {
         updateToolsDisplay();
     }
 
-    // La grille galactique est coûteuse à reconstruire : inutile quand l'onglet est masqué
+    const prestigeTab = document.getElementById('wormhole-tab');
+    if (prestigeTab?.classList.contains('active') && typeof updatePrestigeDisplay === 'function') {
+        updatePrestigeDisplay();
+    }
+    if (typeof updateCollectionAffordability === 'function') updateCollectionAffordability();
+
+    // La carte conserve ses nœuds, et n'a besoin d'être actualisée que si elle est visible.
     if (isGalaxyTabActive()) {
         refreshGalaxy();
     }

@@ -16,6 +16,8 @@ let autoSaveInterval = null;
 function resetRunState(options = {}) {
     const keepPrestige = options.keepPrestige === true;
 
+    if (typeof resetTemporaryEffects === 'function') resetTemporaryEffects();
+
     window.score = 0;
     window.scorePerSecond = 0;
     window.clickPower = 1;
@@ -88,192 +90,179 @@ function resetRunState(options = {}) {
     if (typeof updateScorePerSecond === 'function') {
         updateScorePerSecond();
     }
+    if (typeof updateCollectionDisplay === 'function') updateCollectionDisplay();
+    if (typeof renderLaboratoryTree === 'function') renderLaboratoryTree();
+    if (typeof synchroniserHorlogeJeu === 'function') synchroniserHorlogeJeu();
+}
+
+// Construit un état complet indépendant du fichier et de la partie courante.
+// Aucune mutation ni aucun timer avant que toutes les données aient été validées.
+function normalizeGameData(data) {
+    const invalid = field => { throw new Error(`Sauvegarde invalide : ${field}`); };
+    const record = (value, field) => {
+        if (!value || typeof value !== 'object' || Array.isArray(value)) invalid(field);
+        return value;
+    };
+    const number = (value, fallback, field, integer = false, max = Infinity) => {
+        if (value === undefined) return fallback;
+        if (!Number.isFinite(value) || value < 0 || value > max || (integer && !Number.isSafeInteger(value))) invalid(field);
+        return value;
+    };
+    const ids = (value, definitions, field) => {
+        if (value === undefined) return [];
+        if (!Array.isArray(value)) invalid(field);
+        value.forEach(id => {
+            if (typeof id !== 'string' || !definitions.some(item => item.id === id)) invalid(field);
+        });
+        return [...new Set(value)];
+    };
+    const records = (value, definitions, field) => {
+        if (value === undefined) return new Map();
+        if (!Array.isArray(value)) invalid(field);
+        const result = new Map();
+        value.forEach(entry => {
+            record(entry, field);
+            if (!definitions.some(item => item.id === entry.id) || result.has(entry.id)) invalid(field);
+            result.set(entry.id, entry);
+        });
+        return result;
+    };
+    const shopItems = (value, definitions, field, quantityKey) => {
+        const saved = records(value, definitions, field);
+        return definitions.map(item => {
+            const entry = saved.get(item.id) || {};
+            const upgrades = entry.upgrades === undefined ? {} : record(entry.upgrades, `${field}.upgrades`);
+            number(entry.multiplier, 1, `${field}.multiplier`);
+            return {
+                id: item.id,
+                [quantityKey]: number(entry[quantityKey], 0, `${field}.${quantityKey}`, true),
+                upgrades: Object.fromEntries(PALIERS_AMELIORATION.map(level => {
+                    const key = `level${level}`;
+                    if (upgrades[key] !== undefined && typeof upgrades[key] !== 'boolean') invalid(`${field}.upgrades.${key}`);
+                    return [key, upgrades[key] === true];
+                }))
+            };
+        });
+    };
+
+    record(data, 'format');
+    if (data.version !== undefined && !['1.3', SAVE_VERSION].includes(data.version)) invalid('version non prise en charge');
+    if (data.score === undefined) invalid('score manquant');
+    const score = number(data.score, 0, 'score');
+    const totalScoreEarned = Math.max(score, number(data.totalScoreEarned, score, 'totalScoreEarned'));
+    number(data.clickPower, 1, 'clickPower');
+    number(data.scorePerSecond, 0, 'scorePerSecond');
+
+    const collected = ids(data.collectedItems, permanentItems, 'collectedItems');
+    const levels = data.itemLevels === undefined ? {} : record(data.itemLevels, 'itemLevels');
+    Object.entries(levels).forEach(([id, level]) => {
+        if (!permanentItems.some(item => item.id === id) || number(level, 1, 'itemLevels', true, 50) < 1) invalid('itemLevels');
+    });
+    const research = ids(data.unlockedResearch, laboratoryResearchTree, 'unlockedResearch');
+    let activeResearch = null;
+    if (data.activeResearch !== undefined && data.activeResearch !== null) {
+        const active = record(data.activeResearch, 'activeResearch');
+        ids([active.id], laboratoryResearchTree, 'activeResearch.id');
+        const startAt = number(active.startAt, 0, 'activeResearch.startAt');
+        const endAt = number(active.endAt, 0, 'activeResearch.endAt');
+        if (startAt <= 0 || endAt <= startAt) invalid('activeResearch.durée');
+        if (!research.includes(active.id)) activeResearch = { id: active.id, startAt, endAt };
+    }
+
+    const planetId = data.currentPlanetId === undefined ? 'orbita_prime' : data.currentPlanetId;
+    ids([planetId], galaxyPlanets, 'currentPlanetId');
+    const systemId = data.currentSystemId === undefined ? getPlanetById(planetId).systemId : data.currentSystemId;
+    ids([systemId], galaxySystems, 'currentSystemId');
+    const harvested = data.planetHarvested === undefined ? {} : record(data.planetHarvested, 'planetHarvested');
+    Object.entries(harvested).forEach(([id, amount]) => {
+        ids([id], galaxyPlanets, 'planetHarvested.id');
+        number(amount, 0, 'planetHarvested');
+    });
+    const savedPrestige = records(data.prestigeUpgrades, prestigeUpgrades, 'prestigeUpgrades');
+    return {
+        score,
+        totalScoreEarned,
+        totalScoreConverted: number(data.totalScoreConverted, 0, 'totalScoreConverted', false, totalScoreEarned),
+        stardust: number(data.stardust, 0, 'stardust'),
+        lastSeenAt: number(data.lastSeenAt, 0, 'lastSeenAt'),
+        prestigeUpgrades: prestigeUpgrades.map(upgrade => ({
+            id: upgrade.id,
+            level: number(savedPrestige.get(upgrade.id)?.level, 0, 'prestigeUpgrades.level', true, upgrade.maxLevel)
+        })),
+        collectedItems: collected,
+        itemLevels: Object.fromEntries(collected.map(id => [id, levels[id] || 1])),
+        unlockedResearch: research,
+        researchPoints: number(data.researchPoints, 0, 'researchPoints', true),
+        activeResearch,
+        currentPlanetId: planetId,
+        currentSystemId: systemId,
+        visitedPlanets: [...new Set([...ids(data.visitedPlanets, galaxyPlanets, 'visitedPlanets'), planetId])],
+        planetHarvested: Object.fromEntries(galaxyPlanets.map(planet => [planet.id, Math.min(harvested[planet.id] || 0, planet.harvestCap)])),
+        claimedPlanetResearchRewards: ids(data.claimedPlanetResearchRewards, galaxyPlanets, 'claimedPlanetResearchRewards'),
+        farms: shopItems(data.farms, farms, 'farms', 'count'),
+        tools: shopItems(data.tools, tools, 'tools', 'level')
+    };
 }
 
 function applyLoadedGameData(gameData, options = {}) {
+    const data = normalizeGameData(gameData);
     const refreshUI = options.refreshUI !== false;
 
-    // Vérifier la validité minimale des données
-    if (!gameData || (!gameData.score && gameData.score !== 0)) {
-        throw new Error('Fichier de sauvegarde invalide');
+    resetTemporaryEffects();
+    for (const key of ['score', 'totalScoreEarned', 'totalScoreConverted', 'stardust', 'researchPoints',
+        'activeResearch', 'currentPlanetId', 'currentSystemId', 'visitedPlanets', 'planetHarvested', 'claimedPlanetResearchRewards']) {
+        window[key] = data[key];
     }
+    window.collectedItems.length = 0;
+    window.collectedItems.push(...data.collectedItems);
+    Object.keys(window.itemLevels).forEach(key => delete window.itemLevels[key]);
+    Object.assign(window.itemLevels, data.itemLevels);
+    window.unlockedResearch.length = 0;
+    window.unlockedResearch.push(...data.unlockedResearch);
+    prestigeUpgrades.forEach((upgrade, index) => { upgrade.level = data.prestigeUpgrades[index].level; });
+    farms.forEach((farm, index) => { Object.assign(farm, data.farms[index]); });
+    tools.forEach((tool, index) => { Object.assign(tool, data.tools[index]); });
 
-    // Charger les données de base
-    window.score = gameData.score || 0;
-    window.totalScoreEarned = gameData.totalScoreEarned || 0;
-    window.clickPower = gameData.clickPower || 1;
-    window.scorePerSecond = gameData.scorePerSecond || 0;
-
-    // Charger les données de prestige
-    window.stardust = gameData.stardust || 0;
-    // Sauvegardes 1.3 : aucune entropie n'avait encore été comptabilisée comme convertie
-    window.totalScoreConverted = Number.isFinite(gameData.totalScoreConverted) ? gameData.totalScoreConverted : 0;
-
-    // Restaurer les upgrades de prestige
-    if (Array.isArray(gameData.prestigeUpgrades) && Array.isArray(window.prestigeUpgrades)) {
-        gameData.prestigeUpgrades.forEach(savedUpgrade => {
-            const upgrade = window.prestigeUpgrades.find(u => u.id === savedUpgrade.id);
-            if (upgrade) {
-                upgrade.level = savedUpgrade.level || 0;
-            }
-        });
-    }
-
-    // Charger les items collectés (collection)
-    if (Array.isArray(window.collectedItems)) {
-        window.collectedItems.length = 0;
-        if (Array.isArray(gameData.collectedItems)) {
-            window.collectedItems.push(...gameData.collectedItems);
-        }
-    }
-
-    // Charger les niveaux des items (collection)
-    if (window.itemLevels && typeof window.itemLevels === 'object') {
-        Object.keys(window.itemLevels).forEach(key => {
-            delete window.itemLevels[key];
-        });
-
-        if (gameData.itemLevels && typeof gameData.itemLevels === 'object') {
-            Object.assign(window.itemLevels, gameData.itemLevels);
-        }
-    }
-
-    // Charger les recherches du laboratoire
-    if (Array.isArray(window.unlockedResearch)) {
-        window.unlockedResearch.length = 0;
-        if (Array.isArray(gameData.unlockedResearch)) {
-            window.unlockedResearch.push(...gameData.unlockedResearch);
-        }
-    }
-
-    window.researchPoints = Number.isFinite(gameData.researchPoints) ? gameData.researchPoints : 0;
-
-    if (Array.isArray(gameData.claimedPlanetResearchRewards)) {
-        window.claimedPlanetResearchRewards = gameData.claimedPlanetResearchRewards;
-    } else {
-        window.claimedPlanetResearchRewards = [];
-    }
-
-    // Charger la recherche en cours du laboratoire
-    if (gameData.activeResearch && typeof gameData.activeResearch === 'object') {
-        window.activeResearch = {
-            id: gameData.activeResearch.id,
-            startAt: gameData.activeResearch.startAt,
-            endAt: gameData.activeResearch.endAt
-        };
-    } else {
-        window.activeResearch = null;
-    }
-
-    // Charger la carte galactique
-    if (typeof gameData.currentPlanetId === 'string') {
-        window.currentPlanetId = gameData.currentPlanetId;
-    } else {
-        window.currentPlanetId = 'orbita_prime';
-    }
-
-    if (typeof gameData.currentSystemId === 'string') {
-        window.currentSystemId = gameData.currentSystemId;
-    } else {
-        window.currentSystemId = 'core_sector';
-    }
-
-    if (Array.isArray(gameData.visitedPlanets) && gameData.visitedPlanets.length > 0) {
-        window.visitedPlanets = gameData.visitedPlanets;
-    } else {
-        window.visitedPlanets = ['orbita_prime'];
-    }
-
-    if (gameData.planetHarvested && typeof gameData.planetHarvested === 'object') {
-        window.planetHarvested = gameData.planetHarvested;
-    } else {
-        window.planetHarvested = { orbita_prime: 0 };
-    }
-
-    // Restaurer les fermes
-    if (Array.isArray(gameData.farms)) {
-        gameData.farms.forEach(savedFarm => {
-            const farm = farms.find(f => f.id === savedFarm.id);
-            if (farm) {
-                farm.count = savedFarm.count || 0;
-                farm.multiplier = savedFarm.multiplier || 1;
-                farm.upgrades = savedFarm.upgrades || {
-                    level10: false,
-                    level25: false,
-                    level50: false
-                };
-            }
-        });
-    }
-
-    // Restaurer les outils
-    if (Array.isArray(gameData.tools)) {
-        gameData.tools.forEach(savedTool => {
-            const tool = tools.find(t => t.id === savedTool.id);
-            if (tool) {
-                tool.level = savedTool.level || 0;
-                tool.multiplier = savedTool.multiplier || 1;
-                tool.upgrades = savedTool.upgrades || {
-                    level10: false,
-                    level25: false,
-                    level50: false
-                };
-            }
-        });
-    }
-
-    // Recalculer les valeurs dérivées
-    if (typeof updateScorePerSecond === 'function') {
-        updateScorePerSecond();
-    }
-    if (typeof updateClickPower === 'function') {
-        updateClickPower();
-    }
-
-    // L'auto-clicker doit repartir proprement après un chargement
-    if (typeof startAutoClicker === 'function') {
-        startAutoClicker();
-    }
-
-    applyOfflineProgress(gameData.lastSeenAt);
+    // Les valeurs dérivées du fichier ne font pas autorité ; les champs absents sont remis à zéro.
+    reapplyCollectionBonuses();
+    applyOfflineProgress(data.lastSeenAt);
+    synchroniserHorlogeJeu();
+    startAutoClicker();
 
     if (refreshUI) {
-        if (typeof updateDisplay === 'function') {
-            updateDisplay();
-        }
-        if (typeof updateCollectionDisplay === 'function') {
-            updateCollectionDisplay();
-        }
-        if (typeof updatePrestigeDisplay === 'function') {
-            updatePrestigeDisplay();
-        }
-        if (typeof renderLaboratoryTree === 'function') {
-            renderLaboratoryTree();
-        }
-        if (typeof renderGalaxyMap === 'function') {
-            renderGalaxyMap();
-        }
+        refreshShop();
+        updateCollectionDisplay();
+        initializePrestigeUpgrades();
+        updatePrestigeDisplay();
+        renderLaboratoryTree();
+        initializeGalaxyMap();
+        updateDisplay();
+        autoSaveGame();
     }
 }
 
 // Progression hors-ligne : crédite la production passive écoulée depuis la dernière session
 function applyOfflineProgress(lastSeenAt) {
     const derniereVisite = Number(lastSeenAt);
-    if (!Number.isFinite(derniereVisite) || derniereVisite <= 0) {
-        return;
+    const maintenant = Date.now();
+    const debut = Number.isFinite(derniereVisite) && derniereVisite > 0
+        ? Math.min(maintenant, Math.max(derniereVisite, maintenant - OFFLINE_MAX_SECONDS * 1000))
+        : maintenant;
+    const secondesEcoulees = (maintenant - debut) / 1000;
+    let gainBrut = 0;
+
+    // Une recherche achevée pendant l'absence change le taux à sa date de fin,
+    // pas rétroactivement sur toute l'absence ni seulement après le chargement.
+    const active = window.activeResearch;
+    if (active && active.endAt <= maintenant) {
+        const changement = Math.min(maintenant, Math.max(debut, active.endAt));
+        gainBrut += (window.scorePerSecond || 0) * (changement - debut) / 1000;
+        completeResearch(active.id, { refreshUI: false });
+        gainBrut += (window.scorePerSecond || 0) * (maintenant - changement) / 1000;
+    } else {
+        gainBrut = (window.scorePerSecond || 0) * secondesEcoulees;
     }
-
-    const secondesEcoulees = Math.min(
-        Math.floor((Date.now() - derniereVisite) / 1000),
-        OFFLINE_MAX_SECONDS
-    );
-
-    const production = window.scorePerSecond || 0;
-    if (secondesEcoulees <= 0 || production <= 0) {
-        return;
-    }
-
-    const gainBrut = production * secondesEcoulees;
+    if (gainBrut <= 0) return;
     const gainReel = typeof applyPlanetHarvestCap === 'function'
         ? applyPlanetHarvestCap(gainBrut)
         : gainBrut;
@@ -289,7 +278,7 @@ function applyOfflineProgress(lastSeenAt) {
         window.totalScoreEarned = (window.totalScoreEarned || 0) + gainReel;
     }
 
-    showOfflineGain(gainReel, secondesEcoulees);
+    showOfflineGain(gainReel, Math.floor(secondesEcoulees));
 }
 
 function showOfflineGain(gain, secondes) {

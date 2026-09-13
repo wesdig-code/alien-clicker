@@ -100,7 +100,8 @@ function updateClickPower() {
     const toolMultiplier = typeof getToolMultiplier === 'function' ? getToolMultiplier() : 1;
     const researchMultiplier = typeof getResearchClickMultiplier === 'function' ? getResearchClickMultiplier() : 1;
     const planetMultiplier = typeof getPlanetClickMultiplier === 'function' ? getPlanetClickMultiplier() : 1;
-    clickPower = baseClickPower * toolMultiplier * researchMultiplier * planetMultiplier;
+    const collectionMultiplier = typeof getCollectionGlobalMultiplier === 'function' ? getCollectionGlobalMultiplier() : 1;
+    clickPower = baseClickPower * toolMultiplier * researchMultiplier * planetMultiplier * collectionMultiplier;
 }
 
 function updateToolsDisplay() {

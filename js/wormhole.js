@@ -2,6 +2,7 @@
 
 // Variables globales pour le système de prestige
 window.stardust = 0;
+const PRESTIGE_MIN_ENTROPY = 2500;
 
 // Définition des améliorations permanentes
 const prestigeUpgrades = [
@@ -61,7 +62,7 @@ function getConvertibleEntropy() {
 
 // Fonction pour calculer le Stardust gagné avec l'entropie encore convertible
 function calculateStardustGain(entropieConvertible) {
-    if (entropieConvertible < 1000) return 0;
+    if (entropieConvertible < PRESTIGE_MIN_ENTROPY) return 0;
 
     // Formule : racine carrée de l'entropie convertible / 50
     let baseStardust = Math.floor(Math.sqrt(entropieConvertible) / 50);
@@ -70,7 +71,8 @@ function calculateStardustGain(entropieConvertible) {
     const stardustUpgrade = prestigeUpgrades.find(u => u.id === 'stardust_gain');
     const multiplier = 1 + (stardustUpgrade.level * 0.1);
 
-    return Math.floor(baseStardust * multiplier);
+    const collectionMultiplier = typeof getCollectionStardustMultiplier === 'function' ? getCollectionStardustMultiplier() : 1;
+    return Math.floor(baseStardust * multiplier * collectionMultiplier);
 }
 
 // Fonction pour effectuer le prestige
@@ -80,7 +82,7 @@ function performPrestige() {
     const stardustGain = calculateStardustGain(entropieConvertible);
 
     if (stardustGain === 0) {
-        showPrestigeNotice('Vous devez avoir généré au moins 1000 Entropie non encore convertie pour utiliser le Wormhole !');
+        showPrestigeNotice(`Vous devez avoir généré au moins ${formatNumber(PRESTIGE_MIN_ENTROPY)} Entropie non encore convertie pour utiliser le Wormhole !`);
         return;
     }
 
@@ -200,7 +202,8 @@ function buyPrestigeUpgrade(upgradeId) {
 
 // Fonction pour calculer le coût d'une amélioration de prestige
 function getPrestigeUpgradeCost(upgrade) {
-    return Math.floor(upgrade.baseCost * Math.pow(1.5, upgrade.level));
+    const discount = typeof getCollectionUpgradeDiscount === 'function' ? getCollectionUpgradeDiscount() : 1;
+    return Math.max(1, Math.floor(upgrade.baseCost * Math.pow(1.5, upgrade.level) * discount));
 }
 
 // Fonction pour initialiser l'affichage des améliorations de prestige
@@ -239,10 +242,36 @@ function initializePrestigeUpgrades() {
         
         container.appendChild(upgradeDiv);
     });
+    updatePrestigeUpgradeButtons();
+}
+
+// Actualisation légère : préserver les boutons et leur focus quand le Stardust évolue.
+function updatePrestigeUpgradeButtons() {
+    prestigeUpgrades.forEach(upgrade => {
+        const row = document.getElementById(`prestige-upgrade-${upgrade.id}`);
+        if (!row) return;
+        const button = row.querySelector('.prestige-upgrade-btn');
+        const level = row.querySelector('.upgrade-level');
+        const description = row.querySelector('.upgrade-description');
+        const cost = getPrestigeUpgradeCost(upgrade);
+        const maxed = upgrade.level >= upgrade.maxLevel;
+        const affordable = window.stardust >= cost;
+        if (level) level.textContent = `${upgrade.level}/${upgrade.maxLevel}`;
+        if (description && upgrade.id === 'auto_click') {
+            const interval = typeof getAutoClickIntervalMs === 'function' ? getAutoClickIntervalMs() : 1000;
+            description.textContent = `Déclenche un clic toutes les ${formatNumber(interval / 1000)} s`;
+        }
+        if (button) {
+            button.disabled = maxed || !affordable;
+            button.className = `prestige-upgrade-btn ${maxed ? 'maxed' : affordable ? 'available' : 'locked'}`;
+            button.textContent = maxed ? '✅ MAX' : `💫 ${cost} Stardust`;
+        }
+    });
 }
 
 // Fonction pour mettre à jour l'affichage du prestige
 function updatePrestigeDisplay() {
+    updatePrestigeUpgradeButtons();
     // Affichage du Stardust
     const stardustDisplay = document.getElementById('stardust-amount');
     if (stardustDisplay) {
@@ -266,7 +295,7 @@ function updatePrestigeDisplay() {
         if (prestigeButton) {
             if (potentialGain === 0) {
                 prestigeButton.disabled = true;
-                prestigeButton.textContent = '🌌 Wormhole (min. 1000 Entropie convertible)';
+                prestigeButton.textContent = `🌌 Wormhole (min. ${formatNumber(PRESTIGE_MIN_ENTROPY)} Entropie convertible)`;
             } else {
                 prestigeButton.disabled = false;
                 prestigeButton.textContent = '🌌 Entrer dans le Wormhole';
@@ -288,7 +317,7 @@ function startAutoClicker() {
             if (typeof triggerAlienClick === 'function') {
                 triggerAlienClick();
             }
-        }, 1000); // 1 fois par seconde
+        }, typeof getAutoClickIntervalMs === 'function' ? getAutoClickIntervalMs() : 1000);
     }
 }
 

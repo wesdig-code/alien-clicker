@@ -77,7 +77,8 @@ function updateScorePerSecond() {
     const farmMultiplier = typeof getFarmMultiplier === 'function' ? getFarmMultiplier() : 1;
     const researchMultiplier = typeof getResearchFarmMultiplier === 'function' ? getResearchFarmMultiplier() : 1;
     const planetMultiplier = typeof getPlanetFarmMultiplier === 'function' ? getPlanetFarmMultiplier() : 1;
-    scorePerSecond = baseScorePerSecond * farmMultiplier * researchMultiplier * planetMultiplier;
+    const collectionMultiplier = typeof getCollectionGlobalMultiplier === 'function' ? getCollectionGlobalMultiplier() : 1;
+    scorePerSecond = baseScorePerSecond * farmMultiplier * researchMultiplier * planetMultiplier * collectionMultiplier;
 }
 
 // La production passive est créditée par la boucle de jeu (`js/game.js`), qui mesure

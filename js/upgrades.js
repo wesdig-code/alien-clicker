@@ -26,7 +26,8 @@ function createUpgradeButton(item, level, type) {
 }
 
 function getUpgradeCost(item, level, type) {
-    return item.baseCost * level * 10; // Coût = coût de base × niveau × 10
+    const discount = typeof getCollectionUpgradeDiscount === 'function' ? getCollectionUpgradeDiscount() : 1;
+    return Math.max(1, Math.floor(item.baseCost * level * 10 * discount));
 }
 
 function buyUpgrade(item, level, type) {

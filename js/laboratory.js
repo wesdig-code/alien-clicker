@@ -140,7 +140,8 @@ function buyResearch(researchId) {
     renderLaboratoryTree();
 }
 
-function completeResearch(researchId) {
+function completeResearch(researchId, options = {}) {
+    if (!laboratoryResearchTree.some(research => research.id === researchId)) return;
     if (!isResearchUnlocked(researchId)) {
         window.unlockedResearch.push(researchId);
     }
@@ -155,11 +156,10 @@ function completeResearch(researchId) {
         updateClickPower();
     }
 
-    if (typeof updateDisplay === 'function') {
-        updateDisplay();
+    if (options.refreshUI !== false) {
+        if (typeof updateDisplay === 'function') updateDisplay();
+        renderLaboratoryTree();
     }
-
-    renderLaboratoryTree();
 }
 
 // Format court d'une durée de recherche (ex: "1m 15s" ou "42s")

@@ -221,13 +221,13 @@ function getItemUpgradeCost(itemId, currentLevel) {
     };
     
     const baseCost = rarityMultiplier[item.rarity] || 1000;
-    return Math.floor(baseCost * Math.pow(nextLevel, 2.5));
+    return Math.max(1, Math.floor(baseCost * Math.pow(nextLevel, 2.5) * getCollectionUpgradeDiscount()));
 }
 
 // Fonction pour calculer le bonus actuel d'un item selon son niveau
 function getItemBonus(itemId, level) {
     const item = permanentItems.find(i => i.id === itemId);
-    if (!item) return item.value;
+    if (!item) return 0;
     
     // Le bonus augmente avec le niveau
     const levelMultiplier = 1 + (level - 1) * 0.1; // +10% par niveau
@@ -237,8 +237,37 @@ function getItemBonus(itemId, level) {
     } else {
         // Pour les multiplicateurs, augmentation plus modérée
         const baseBonus = item.value - 1; // Retirer la base de 1
-        return 1 + (baseBonus * levelMultiplier);
+        // Les réductions de durée/coût doivent rester strictement positives au niveau 50.
+        return Math.max(0.1, 1 + (baseBonus * levelMultiplier));
     }
+}
+
+// Tous les consommateurs lisent les mêmes niveaux, y compris après un chargement.
+function getCollectionMultiplier(bonusType) {
+    return permanentItems.reduce((multiplier, item) => {
+        if (item.bonus !== bonusType || !collectedItems.includes(item.id)) return multiplier;
+        return multiplier * getItemBonus(item.id, itemLevels[item.id] || 1);
+    }, 1);
+}
+
+function getCollectionGlobalMultiplier() {
+    return getCollectionMultiplier('globalMultiplier') * getCollectionMultiplier('allBonuses');
+}
+
+function getCollectionStardustMultiplier() {
+    return getCollectionMultiplier('stardustBonus') * getCollectionMultiplier('allBonuses');
+}
+
+function getCollectionUpgradeDiscount() {
+    return Math.max(0.1, getCollectionMultiplier('upgradeDiscount') / getCollectionMultiplier('allBonuses'));
+}
+
+function getAutoClickIntervalMs() {
+    return Math.max(100, Math.round(1000 * getCollectionMultiplier('autoClickSpeed') / getCollectionMultiplier('allBonuses')));
+}
+
+function getCollectionDropMultiplier() {
+    return getCollectionMultiplier('dropChance') * getCollectionMultiplier('allBonuses');
 }
 
 // Variables pour les effets temporaires
@@ -252,10 +281,7 @@ function handleClickDrop(clickX, clickY) {
     const researchDropMultiplier = typeof getResearchDropChanceMultiplier === 'function' ? getResearchDropChanceMultiplier() : 1;
     totalDropChance *= researchDropMultiplier;
     
-    // Bonus de chance de drop si on a l'éclat cosmique
-    if (collectedItems.includes('cosmic_shard')) {
-        totalDropChance *= 1.3;
-    }
+    totalDropChance = Math.min(100, totalDropChance * getCollectionDropMultiplier());
     
     if (Math.random() * 100 > totalDropChance) {
         return; // Pas de drop cette fois
@@ -415,8 +441,9 @@ function applyItemEffect(item) {
             
         case 'stardust':
             if (typeof window.stardust !== 'undefined') {
-                window.stardust += value;
-                showFloatingText(`+${value} Stardust!`, item.color);
+                const stardustGain = value * getCollectionStardustMultiplier();
+                window.stardust += stardustGain;
+                showFloatingText(`+${formatNumber(stardustGain)} Stardust!`, item.color);
                 if (typeof updatePrestigeDisplay === 'function') {
                     updatePrestigeDisplay();
                 }
@@ -430,15 +457,14 @@ function applyItemEffect(item) {
 
 // Appliquer l'effet d'un item permanent
 function applyPermanentItemEffect(item) {
+    if (collectedItems.includes(item.id)) return;
     // Ajouter l'item à la collection
     collectedItems.push(item.id);
     
     // Initialiser le niveau à 1
     itemLevels[item.id] = 1;
     
-    // Appliquer l'effet permanent selon le type avec le bonus de niveau 1
-    const bonus = getItemBonus(item.id, 1);
-    applyItemBonusToGame(item, bonus);
+    applyItemBonusToGame();
     
     // Affichage de confirmation
     showFloatingText(`🎊 ${item.name} collecté!`, item.color);
@@ -451,59 +477,10 @@ function applyPermanentItemEffect(item) {
 }
 
 // Fonction pour appliquer le bonus d'un item au jeu
-function applyItemBonusToGame(item, bonusValue) {
-    switch (item.bonus) {
-        case 'clickPower':
-            // Bonus additif lu par getCollectionFlatClickBonus() lors du recalcul
-            if (typeof updateClickPower === 'function') {
-                updateClickPower();
-            }
-            break;
-            
-        case 'farmMultiplier':
-            // Bonus permanent aux fermes
-            if (typeof farms !== 'undefined') {
-                farms.forEach(farm => {
-                    farm.multiplier *= bonusValue;
-                });
-                updateScorePerSecond();
-            }
-            break;
-            
-        case 'toolMultiplier':
-            // Bonus permanent aux outils
-            if (typeof tools !== 'undefined') {
-                tools.forEach(tool => {
-                    tool.multiplier *= bonusValue;
-                });
-                updateClickPower();
-            }
-            break;
-            
-        case 'stardustBonus':
-            // Bonus permanent au gain de stardust
-            break;
-            
-        case 'autoClickSpeed':
-            // Améliorer la vitesse d'auto-click
-            break;
-            
-        case 'upgradeDiscount':
-            // Réduction des coûts d'améliorations
-            break;
-            
-        case 'dropChance':
-            // Bonus de chance de drop
-            break;
-            
-        case 'globalMultiplier':
-            // Multiplicateur global appliqué à tout
-            break;
-            
-        case 'allBonuses':
-            // Petit bonus à tous les autres effets
-            break;
-    }
+function applyItemBonusToGame() {
+    reapplyCollectionBonuses();
+    if (typeof startAutoClicker === 'function') startAutoClicker();
+    if (typeof refreshShop === 'function') refreshShop();
 }
 
 // Fonction pour améliorer un item
@@ -523,10 +500,7 @@ function upgradeItem(itemId) {
         return false;
     }
     
-    // Retirer l'ancien bonus
     const item = permanentItems.find(i => i.id === itemId);
-    const oldBonus = getItemBonus(itemId, currentLevel);
-    removeItemBonusFromGame(item, oldBonus);
     
     // Déduire le coût
     score -= upgradeCost;
@@ -534,9 +508,8 @@ function upgradeItem(itemId) {
     // Augmenter le niveau
     itemLevels[itemId] = currentLevel + 1;
     
-    // Appliquer le nouveau bonus
-    const newBonus = getItemBonus(itemId, currentLevel + 1);
-    applyItemBonusToGame(item, newBonus);
+    // Recalculer depuis la collection plutôt que retirer puis multiplier les bonus.
+    applyItemBonusToGame();
     
     // Obtenir la nouvelle qualité
     const quality = getItemQuality(currentLevel + 1);
@@ -549,36 +522,6 @@ function upgradeItem(itemId) {
     updateDisplay();
 
     return true;
-}
-
-// Fonction pour retirer le bonus d'un item du jeu (pour les améliorations)
-function removeItemBonusFromGame(item, bonusValue) {
-    switch (item.bonus) {
-        case 'clickPower':
-            // Rien à retirer : le bonus est recalculé depuis le niveau courant de l'item
-            if (typeof updateClickPower === 'function') {
-                updateClickPower();
-            }
-            break;
-            
-        case 'farmMultiplier':
-            if (typeof farms !== 'undefined') {
-                farms.forEach(farm => {
-                    farm.multiplier /= bonusValue;
-                });
-                updateScorePerSecond();
-            }
-            break;
-            
-        case 'toolMultiplier':
-            if (typeof tools !== 'undefined') {
-                tools.forEach(tool => {
-                    tool.multiplier /= bonusValue;
-                });
-                updateClickPower();
-            }
-            break;
-    }
 }
 
 // Fonction pour afficher du texte flottant
@@ -641,6 +584,13 @@ function cleanupExpiredEffects() {
 
 // Signature du dernier rendu : évite de reconstruire le DOM 10 fois par seconde
 let effectsDisplaySignature = '';
+
+function resetTemporaryEffects() {
+    activeEffects.length = 0;
+    // Forcer aussi le nettoyage du panneau après un reset ou un import.
+    effectsDisplaySignature = 'reset';
+    updateActiveEffectsDisplay();
+}
 
 // Fonction pour mettre à jour l'affichage des effets actifs
 function updateActiveEffectsDisplay() {
@@ -750,6 +700,7 @@ function updateCollectionDisplay() {
         
         const itemElement = document.createElement('div');
         itemElement.className = `collection-item ${isCollected ? 'collected' : 'locked'}`;
+        itemElement.dataset.itemId = item.id;
         
         if (isCollected) {
             const level = itemLevels[item.id] || 1;
@@ -761,7 +712,13 @@ function updateCollectionDisplay() {
             if (item.bonus === 'clickPower') {
                 bonusText = `+${currentBonus} Click Power`;
             } else {
-                bonusText = `x${currentBonus.toFixed(2)} ${item.description.split(' ').slice(1).join(' ')}`;
+                const labels = {
+                    farmMultiplier: 'production des fermes', toolMultiplier: 'efficacité des outils',
+                    stardustBonus: 'gain de Stardust', autoClickSpeed: 'intervalle auto-click',
+                    upgradeDiscount: 'coût des améliorations', dropChance: 'chance de drops',
+                    globalMultiplier: 'production clic et fermes', allBonuses: 'bonus globaux (coûts et délais divisés)'
+                };
+                bonusText = `x${currentBonus.toFixed(2)} ${labels[item.bonus]}`;
             }
             
             itemElement.innerHTML = `
@@ -807,10 +764,17 @@ function updateCollectionDisplay() {
         counter.textContent = `${collectedItems.length}/${permanentItems.length}`;
     }
     
-    // Afficher le panel s'il y a au moins un item collecté
-    if (collectedItems.length > 0) {
-        container.classList.remove('hidden');
-    }
+    container.classList.toggle('hidden', collectedItems.length === 0);
+}
+
+function updateCollectionAffordability() {
+    const grid = document.getElementById('collection-grid');
+    if (!grid) return;
+    grid.querySelectorAll('.collection-item.collected').forEach(element => {
+        const id = element.dataset.itemId;
+        const level = itemLevels[id] || 1;
+        element.classList.toggle('insufficient-funds', level < 50 && score < getItemUpgradeCost(id, level));
+    });
 }
 
 // Fonction pour afficher/masquer le panel de collection
@@ -838,8 +802,6 @@ function getCollectionFlatClickBonus() {
     }, 0);
 }
 
-// Réapplique les multiplicateurs de la collection aux fermes / outils.
-// Précondition : les multiplicateurs viennent d'être remis à 1 (prestige, nouvelle partie).
 // Chaque palier d'amélioration acheté double la production de l'objet
 function getMultiplicateurAmeliorations(item) {
     const paliersAchetes = Object.values(item.upgrades || {}).filter(Boolean).length;
@@ -847,21 +809,8 @@ function getMultiplicateurAmeliorations(item) {
 }
 
 function reapplyCollectionBonuses() {
-    let bonusFermes = 1;
-    let bonusOutils = 1;
-
-    collectedItems.forEach(itemId => {
-        const item = permanentItems.find(permanentItem => permanentItem.id === itemId);
-        if (!item) return;
-
-        const bonus = getItemBonus(itemId, itemLevels[itemId] || 1);
-
-        if (item.bonus === 'farmMultiplier') {
-            bonusFermes *= bonus;
-        } else if (item.bonus === 'toolMultiplier') {
-            bonusOutils *= bonus;
-        }
-    });
+    const bonusFermes = getCollectionMultiplier('farmMultiplier');
+    const bonusOutils = getCollectionMultiplier('toolMultiplier');
 
     // Le multiplicateur est entièrement dérivable : chaque amélioration achetée le double,
     // et la collection s'applique par-dessus. On le recalcule au lieu de l'accumuler,
@@ -916,6 +865,11 @@ window.getCurrentScoreMultiplier = getCurrentScoreMultiplier;
 window.getDropFlatClickBonus = getDropFlatClickBonus;
 window.getCollectionFlatClickBonus = getCollectionFlatClickBonus;
 window.reapplyCollectionBonuses = reapplyCollectionBonuses;
+window.resetTemporaryEffects = resetTemporaryEffects;
+window.getCollectionGlobalMultiplier = getCollectionGlobalMultiplier;
+window.getCollectionStardustMultiplier = getCollectionStardustMultiplier;
+window.getCollectionUpgradeDiscount = getCollectionUpgradeDiscount;
+window.getAutoClickIntervalMs = getAutoClickIntervalMs;
 window.initializeDropSystem = initializeDropSystem;
 window.updateActiveEffectsDisplay = updateActiveEffectsDisplay;
 window.toggleActiveEffectsDisplay = toggleActiveEffectsDisplay;
